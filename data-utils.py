@@ -17,6 +17,8 @@ CIFAT = cifar10.load_data()
 
 
 # Perform techniques
+# Dla każdego ustawić domyślne wartości parametrów, jeśli użytkownik zmieni to podmianka
+# Te funkcje tylko dla implementacji metody i zwrot, odrębne funkcję robiące wizualizację
 def perform_t_sne(dataset, n_components, perplexity, learning_rate, metric):
     tsne = TSNE(n_components=n_components, perplexity=perplexity, learning_rate=learning_rate, metric=metric)
     return tsne.fit_transform(dataset)
