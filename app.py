@@ -2,42 +2,26 @@ import matplotlib.pyplot as plt
 import streamlit as st
 from datautils import *
 from itertools import product
+import time
 
 # To run up as website (with venv activated)
 # USAGE:  streamlit run app.py
 if 'dataset_loaded' not in st.session_state:
     st.session_state['dataset_loaded'] = False
-    st.session_state['data'] = None
-
-#if st.session_state['dataset_loaded']:
- #  st.experimental_rerun()
-
-
-def unlock_tabs():
-    st.session_state['tab1_submitted'] = True
-
 
 tab1, tab2, tab3, tab4 = st.tabs(["Select Dataset", "Choose Technique and Parameters", "Data Visualization", "Experiments"])
 
 with tab1:
     st.header("Dataset Selection")
-    dataset_name = st.selectbox("Choose a dataset or upload your own",
-                                ["MNIST", "Fashion-MNIST", "CIFAR-10", "Upload Dataset"])
+    dataset_name = st.selectbox("Choose a dataset or upload your own", ["MNIST", "Fashion-MNIST", "CIFAR-10", "Upload Dataset"])
 
     if dataset_name == "Upload Dataset":
         uploaded_file = st.file_uploader("Choose a file (CSV or Excel)")
-
         if uploaded_file:
             try:
-                if uploaded_file.name.endswith('.csv'):
-                    data = pd.read_csv(uploaded_file)
-                elif uploaded_file.name.endswith('.xls') or uploaded_file.name.endswith('.xlsx'):
-                    data = pd.read_excel(uploaded_file)
-                else:
-                    raise ValueError("Invalid file format. Please upload a CSV or Excel file.")
-
-                if 'target' not in data.columns:
-                    raise ValueError("The dataset must contain a 'target' column.")
+                data = upload_file(uploaded_file)
+                if isinstance(data, str):
+                    raise ValueError(data)
 
                 st.session_state['data'] = data
                 st.session_state['dataset_loaded'] = True
@@ -46,73 +30,89 @@ with tab1:
             except Exception as e:
                 st.error(f"Error loading dataset: {e}")
 
-    else:
+    elif dataset_name in ["MNIST", "Fashion-MNIST", "CIFAR-10"]:
         if st.button("Load Dataset"):
             data = load_dataset(dataset_name)
-            if data is not None:
+            if isinstance(data, str):
+                st.error(data)
+            else:
                 st.session_state['data'] = data
                 st.session_state['dataset_loaded'] = True
                 st.success("Dataset successfully loaded!")
-            else:
-                st.error("Could not load the selected dataset.")
 
 with tab2:
     if st.session_state['dataset_loaded']:
         st.header("Choose Technique and Parameters")
-        st.write("Dataset successfully loaded!")
 
         technique = st.selectbox("Select Reduction Technique", ["t-SNE", "UMAP", "TRIMAP", "PaCMAP"])
 
-        if technique == "t-SNE":
-            n_components = st.slider("Number of components", 2, 3, 2)
-            perplexity = st.slider("Perplexity", 5, 50, 30)
-            learning_rate = st.slider("Learning Rate", 10, 200, 200)
-            metric = st.selectbox("Metric", ["euclidean", "manhattan", "cosine"])
+        try:
+            if technique == "t-SNE":
+                n_components = st.slider("Number of components", 2, 3, 2)
+                perplexity = st.slider("Perplexity", 5, 50, 30)
+                learning_rate = st.slider("Learning Rate", 10, 200, 200)
+                metric = st.selectbox("Metric", ["euclidean", "manhattan", "cosine"])
 
-            data = st.session_state['data']['data']
-            reduced_data = perform_t_sne(data, n_components, perplexity, learning_rate, metric)
-            st.session_state['reduced_data'] = reduced_data
-            st.success("t-SNE completed!")
+                # Wykonanie t-SNE
+                data = st.session_state['data']['data']
+                reduced_data = perform_t_sne(data, n_components, perplexity, learning_rate, metric)
+                st.session_state['reduced_data'] = reduced_data
+                st.success("t-SNE completed!")
 
-        elif technique == "UMAP":
-            n_neighbors = st.slider("Number of Neighbors", 2, 100, 15)
-            min_dist = st.slider("Minimum Distance", 0.0, 0.99, 0.1)
+            elif technique == "UMAP":
+                n_neighbors = st.slider("Number of Neighbors", 2, 100, 15)
+                min_dist = st.slider("Minimum Distance", 0.0, 0.99, 0.1)
 
-            data = st.session_state['data']['data']
-            reduced_data = perform_umap(data, n_neighbors, min_dist)
-            st.session_state['reduced_data'] = reduced_data
-            st.success("UMAP completed!")
+                data = st.session_state['data']['data']
+                reduced_data = perform_umap(data, n_neighbors, min_dist)
+                st.session_state['reduced_data'] = reduced_data
+                st.success("UMAP completed!")
 
-        elif technique == "TRIMAP":
-            n_neighbors = st.slider("Number of Neighbors", 2, 100, 10)
+            elif technique == "TRIMAP":
+                n_neighbors = st.slider("Number of Neighbors", 2, 100, 10)
 
-            data = st.session_state['data']['data']
-            reduced_data = perform_trimap(data, n_neighbors)
-            st.session_state['reduced_data'] = reduced_data
-            st.success("TRIMAP completed!")
+                data = st.session_state['data']['data']
+                reduced_data = perform_trimap(data, n_neighbors)
+                st.session_state['reduced_data'] = reduced_data
+                st.success("TRIMAP completed!")
 
-        elif technique == "PaCMAP":
-            n_components = st.slider("Number of Components", 2, 3, 2)
-            n_neighbors = st.slider("Number of Neighbors", 2, 100, 10)
+            elif technique == "PaCMAP":
+                n_components = st.slider("Number of Components", 2, 3, 2)
+                n_neighbors = st.slider("Number of Neighbors", 2, 100, 10)
 
-            data = st.session_state['data']['data']
-            reduced_data = perform_pacmap(data, n_components, n_neighbors)
-            st.session_state['reduced_data'] = reduced_data
-            st.success("PaCMAP completed!")
+                data = st.session_state['data']['data']
+                reduced_data = perform_pacmap(data, n_components, n_neighbors)
+                st.session_state['reduced_data'] = reduced_data
+                st.success("PaCMAP completed!")
+
+        except Exception as e:
+            st.error(f"Error performing dimensionality reduction: {e}")
+
     else:
         st.error("Please load a dataset in the 'Select Dataset' tab first.")
 
 with tab3:
     if st.session_state['dataset_loaded']:
         st.header("Data Visualization")
-        st.write("Analysis and visualization tools could be added here.")
 
-        if 'reduced_data' in locals():
+        if 'reduced_data' in st.session_state:
+            progress_bar = st.progress(0)
+            progress_steps = 100
+
+            for step in range(progress_steps):
+                time.sleep(0.05)
+                progress_bar.progress(step + 1)
+
             fig, ax = plt.subplots()
-            ax.scatter(reduced_data[:, 0], reduced_data[:, 1], c=st.session_state['data']['target'], cmap='viridis')
+            ax.scatter(st.session_state['reduced_data'][:, 0], st.session_state['reduced_data'][:, 1],
+                       c=st.session_state['data']['target'], cmap='viridis')
             st.pyplot(fig)
+
+        else:
+            st.warning("No data to visualize. Please complete a reduction technique.")
+
     else:
-        st.error("No data to visualize. Please load a dataset in the 'Select Dataset' tab first.")
+        st.error("Please load a dataset in the 'Select Dataset' tab first.")
 
 with tab4:
     if st.session_state['dataset_loaded']:
