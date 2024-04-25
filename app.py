@@ -8,6 +8,10 @@ import time
 # USAGE:  streamlit run app.py
 if 'dataset_loaded' not in st.session_state:
     st.session_state['dataset_loaded'] = False
+    st.session_state['data'] = None
+
+def unlock_tabs():
+    st.session_state['tab1_submitted'] = True
 
 tab1, tab2, tab3, tab4 = st.tabs(["Select Dataset", "Choose Technique and Parameters", "Data Visualization", "Experiments"])
 
