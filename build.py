@@ -1,54 +1,91 @@
 from datautils import *
 import streamlit as st
 
-
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
-
 
 # Page functions
 def load_page1():
-    # można też z tego zrobić odrębna strone
-    # Tutaj coś ładnie opisać o samej aplikacji i jak działa. Krótko i konkretnie.
-    # Ew jakaś instrukcja obsługi programu i opis dataset'ów
     st.title("Dimensionality Reduction")
     st.write("""
-            Interactive app designed for advanced data visualization using techniques like t-SNE, UMAP,
-            TRIMAP, and PaCMAP. It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
-        """)
+        Interactive app designed for advanced data visualization using techniques like t-SNE, UMAP, TRIMAP, and PaCMAP.
+        It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
+    """)
 
-    #st.write("### MNIST Handwritten Digits")
-    #st.write("Dataset of 70,000 28x28 grayscale images of the 10 digits, along with a test set of 10,000 images.")
-
-    #st.write("### 20 Newsgroups Text Data")
-    #st.write("Collection of approximately 20,000 newsgroup documents, partitioned across 20 different newsgroups.")
-
-    #st.write("### Labeled Faces in the Wild (LFW)")
-    #st.write(
-    #    "More than 13,000 images of faces collected from the web, each labeled with the name of the person pictured.")
-
-    # To wyżej zdecydowanie do poprawy
-    # + możliwość samplowania
-    dataset_names = [
-        'MNIST Handwritten Digits',
-        '20 Newsgroups Text Data',
-        'Labeled Faces in the Wild (LFW)'
-    ]
-
+    # Wybór datasetu
+    dataset_names = ['MNIST Handwritten Digits', '20 Newsgroups Text Data', 'Labeled Faces in the Wild (LFW)', "Upload Dataset"]
     selected_dataset = st.selectbox("Choose a dataset to load", dataset_names)
 
-    if st.button("Load chosen dataset"):
-        if selected_dataset == 'MNIST Handwritten Digits':
-            dataset = load_mnist_dataset()
-        elif selected_dataset == '20 Newsgroups Text Data':
-            dataset = load_20_newsgroups_dataset()
-        elif selected_dataset == 'Labeled Faces in the Wild (LFW)':
-            dataset = load_lfw_dataset()
+    # Suwak do wyboru wielkości próbkowania
+    sample_percentage = st.slider(
+        "Sample Size (in percentage)",
+        min_value=1,
+        max_value=100,
+        value=100
+    )
 
-        if dataset is not None:
-            st.session_state['data'] = dataset
-            st.session_state['dataset_loaded'] = True
-            st.success("Dataset loaded successfully. Navigate to 'Choose Technique and Parameters' to continue.")
+    # Obsługa przesyłania plików przez użytkownika
+    if selected_dataset == "Upload Dataset":
+        st.write("Drag and drop a file (CSV or Excel) to upload, or choose from disk:")
+        uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"])
 
+        # Przycisk do ładowania datasetu
+        if st.button("Load Dataset", key="load_predefined_dataset1"):
+            if uploaded_file:
+                try:
+                    dataset = upload_file(uploaded_file, sample_percentage)
+                    if isinstance(dataset, str):
+                        raise ValueError(dataset)
+
+                    # Komunikat o rozmiarze pełnego datasetu
+                    st.success(f"The full dataset contains {dataset.shape[0]} rows.")
+
+                    # Próbkowanie danych
+                    if isinstance(dataset, np.ndarray):
+                        dataset = pd.DataFrame(dataset)
+
+                    sampled_data = dataset.sample(frac=sample_percentage / 100, random_state=42)
+
+                    st.session_state['data'] = sampled_data
+                    st.session_state['dataset_loaded'] = True
+                    st.success(f"Sample loaded successfully! Sample size: {sampled_data.shape[0]} rows.")
+
+                except Exception as e:
+                    st.error(f"Error loading dataset: {e}")
+
+    # Obsługa predefiniowanych datasetów
+    elif selected_dataset in ["MNIST Handwritten Digits", "20 Newsgroups Text Data", "Labeled Faces in the Wild (LFW)"]:
+        if st.button("Load Dataset", key="load_predefined_dataset2"):
+            try:
+                if selected_dataset == 'MNIST Handwritten Digits':
+                    dataset = load_mnist_dataset()
+                elif selected_dataset == '20 Newsgroups Text Data':
+                    dataset = load_20_newsgroups_dataset()
+                elif selected_dataset == 'Labeled Faces in the Wild (LFW)':
+                    dataset = load_lfw_dataset()
+
+                if isinstance(dataset, np.ndarray):
+                    dataset = pd.DataFrame(dataset)
+
+                if hasattr(dataset, 'data'):
+                    dataset_size = dataset.data.shape[0]
+                else:
+                    dataset_size = dataset.shape[0]
+
+                st.success(f"The full dataset contains {dataset_size} rows.")
+
+
+                if hasattr(dataset, 'data'):
+                    sampled_data = pd.DataFrame(dataset.data).sample(frac=sample_percentage / 100, random_state=42)
+                    sampled_data['target'] = dataset.target.sample(frac=sample_percentage / 100, random_state=42).values
+                else:
+                    sampled_data = dataset.sample(frac=sample_percentage / 100, random_state=42)
+
+                st.session_state['data'] = sampled_data
+                st.session_state['dataset_loaded'] = True
+                st.success(f"Sample loaded successfully! Sample size: {sampled_data.shape[0]} rows.")
+
+            except Exception as e:
+                st.error(f"Error loading dataset: {e}")
 
 def load_page2():
     st.title("Choose Technique and Parameters")

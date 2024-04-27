@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import streamlit as st
+
+from build import select_page
 from datautils import *
 from itertools import product
 import time
@@ -11,17 +13,30 @@ def select_dataset_page():
     st.title("Select Dataset")
     dataset_name = st.selectbox("Choose a dataset or upload your own", ["MNIST", "Fashion-MNIST", "CIFAR-10", "Upload Dataset"])
 
+    sample_percentage = st.slider(
+        "Sample Size (in percentage)",
+        min_value=1,
+        max_value=100,
+        value=100,  # Domyślnie 100%
+        key="sample_percentage_slider"
+    )  # Domyślnie 100% danych
+
     if dataset_name == "Upload Dataset":
-        uploaded_file = st.file_uploader("Choose a file (CSV or Excel)")
+        st.write("Drag and drop a file (CSV or Excel) to upload, or choose from disk:")
+        uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"], key="file_uploader")
+
         if uploaded_file:
             try:
-                data = upload_file(uploaded_file)
+                data = upload_file(uploaded_file, sample_percentage)
                 if isinstance(data, str):
                     raise ValueError(data)
 
-                st.session_state['data'] = data
+
+                sample_data = data.sample(frac=sample_percentage / 100, random_state=42)
+
+                st.session_state['data'] = sample_data
                 st.session_state['dataset_loaded'] = True
-                st.success("Dataset successfully loaded!")
+                st.success(f"Dataset successfully loaded! Size: {sample_data.shape[0]} rows.")
 
                 if st.button("Proceed to Choose Technique"):
                     st.session_state['page'] = "choose_technique"
@@ -30,17 +45,19 @@ def select_dataset_page():
                 st.error(f"Error loading dataset: {e}")
 
     elif dataset_name in ["MNIST", "Fashion-MNIST", "CIFAR-10"]:
-        if st.button("Load Dataset"):
+        if st.button("Load Dataset", key="load_dataset_button"):
             try:
-                data = load_dataset(dataset_name)
+                data = load_dataset(dataset_name, sample_percentage)
+
                 if isinstance(data, str):
                     raise ValueError(data)
 
-                st.session_state['data'] = data
+                sample_data = data.sample(frac=sample_percentage / 100, random_state=42)
+                st.session_state['data'] = sample_data
                 st.session_state['dataset_loaded'] = True
-                st.success("Dataset successfully loaded!")
+                st.success(f"Dataset successfully loaded! Sample size: {sample_data.shape[0]} rows.")
 
-                if st.button("Proceed to Choose Technique"):
+                if st.button("Proceed to Choose Technique", key="proceed_to_technique_2"):
                     st.session_state['page'] = "choose_technique"
 
             except Exception as e:
