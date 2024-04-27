@@ -254,18 +254,47 @@ def experiments_page():
         st.error("Please load a dataset in the 'Select Dataset' tab first.")
 
 def main():
+    # SIDEBAR
     if 'page' not in st.session_state:
-        st.session_state['page'] = "select_dataset"
+        st.session_state.page = "Load Dataset"
 
-    page = st.session_state['page']
-    if page == "select_dataset":
+    st.markdown(
+        """
+        <style>
+        div.stButton > button:first-child {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        </style>
+        """, unsafe_allow_html=True
+    )
+
+    st.markdown(
+        """
+        <style>
+        /* CSS selector for the sidebar title */
+        .css-1d391kg {
+            text-align: center;
+        }
+        </style>
+        """, unsafe_allow_html=True
+    )
+
+    st.sidebar.markdown("<h1 style='text-align: center;'>Navigation Menu</h1>", unsafe_allow_html=True)
+
+    st.sidebar.button("Load Dataset", on_click=select_page, args=("Load Dataset",))
+    st.sidebar.button("Techniques Set Up", on_click=select_page, args=("Techniques Set Up",))
+    st.sidebar.button("View Data", on_click=select_page, args=("View Data",))
+    st.sidebar.button("Experiments", on_click=select_page, args=("Experiments",))
+
+    if st.session_state.page == "Load Dataset":
         select_dataset_page()
-    elif page == "choose_technique":
+    elif st.session_state.page == "Techniques Set Up":
         choose_technique_page()
-    elif page == "data_visualization":
+    elif st.session_state.page == "View Data":
         data_visualization_page()
-    else:
-        st.write("Unknown page")
+    elif st.session_state.page == "Experiments":
+        experiments_page()
 
 if __name__ == "__main__":
     main()

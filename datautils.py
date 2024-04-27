@@ -3,10 +3,53 @@ import numpy as np
 import trimap
 import umap
 from sklearn.manifold import TSNE
-from sklearn.datasets import fetch_openml
 from keras.datasets import cifar10
 import os
 import pacmap
+import streamlit as st
+from sklearn.datasets import fetch_openml
+
+
+def load_mnist_dataset():
+    st.write("Loading MNIST Handwritten Digits dataset...")
+    data = fetch_openml(name='mnist_784', version=1)
+    st.write("Completed loading MNIST Handwritten Digits. Please proceed to next page.")
+    return data
+
+def load_20_newsgroups_dataset():
+    st.write("Loading 20 Newsgroups Text Data dataset...")
+    data = load_20_newsgroups()
+    st.write("Completed loading 20 Newsgroups Text. Please proceed to next page.")
+    return data
+
+
+def load_human_activity_dataset():
+    st.write("Loading Human Activity Recognition dataset...")
+    data = load_human_activity()
+    st.write("Completed loading Human Activity Recognition. Please proceed to next page.")
+    return data
+
+
+def load_gene_expression_dataset():
+    st.write("Loading Gene Expression Cancer RNA-Seq dataset...")
+    data = load_gene_expression()
+    st.write("Completed loading Gene Expression Cancer RNA-Seq. Please proceed to next page.")
+    return data
+
+
+def load_breast_imaging_dataset():
+    st.write("Loading Curated Breast Imaging Subset dataset...")
+    data = load_breast_imaging()
+    st.write("Completed loading Curated Breast Imaging Subset. Please proceed to next page.")
+    return data
+
+
+def load_lfw_dataset():
+    st.write("Loading Labeled Faces in the Wild (LFW) dataset...")
+    data = load_lfw()
+    st.write("Completed loading Faces in the Wild. Please proceed to next page.")
+    return data
+
 
 # Funkcja do ładowania zestawu danych
 def load_dataset(name):
@@ -87,4 +130,6 @@ def perform_pacmap(dataset, n_components=2, n_neighbors=15):
         return pac_map.fit_transform(dataset)
     except Exception as e:
         return f"Error performing PaCMAP: {e}"
+
+
 
