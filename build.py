@@ -1,8 +1,5 @@
-import matplotlib.pyplot as plt
-import streamlit as st
 from datautils import *
-from itertools import product
-import time
+import streamlit as st
 
 
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
@@ -19,35 +16,21 @@ def load_page1():
             TRIMAP, and PaCMAP. It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
         """)
 
-    st.write("### MNIST Handwritten Digits")
-    st.write("Dataset of 70,000 28x28 grayscale images of the 10 digits, along with a test set of 10,000 images.")
+    #st.write("### MNIST Handwritten Digits")
+    #st.write("Dataset of 70,000 28x28 grayscale images of the 10 digits, along with a test set of 10,000 images.")
 
-    st.write("### 20 Newsgroups Text Data")
-    st.write("Collection of approximately 20,000 newsgroup documents, partitioned across 20 different newsgroups.")
+    #st.write("### 20 Newsgroups Text Data")
+    #st.write("Collection of approximately 20,000 newsgroup documents, partitioned across 20 different newsgroups.")
 
-    st.write("### Human Activity Recognition")
-    st.write(
-        "Recordings of 30 study participants performing activities of daily living with a waist-mounted smartphone with embedded inertial sensors.")
-
-    st.write("### Gene Expression Cancer RNA-Seq")
-    st.write(
-        "A random extraction of gene expressions of patients having different types of tumor: BRCA, KIRC, COAD, LUAD, and PRAD.")
-
-    st.write("### Curated Breast Imaging Subset")
-    st.write("Features for breast cancer histopathology images.")
-
-    st.write("### Labeled Faces in the Wild (LFW)")
-    st.write(
-        "More than 13,000 images of faces collected from the web, each labeled with the name of the person pictured.")
+    #st.write("### Labeled Faces in the Wild (LFW)")
+    #st.write(
+    #    "More than 13,000 images of faces collected from the web, each labeled with the name of the person pictured.")
 
     # To wyżej zdecydowanie do poprawy
     # + możliwość samplowania
     dataset_names = [
         'MNIST Handwritten Digits',
         '20 Newsgroups Text Data',
-        'Human Activity Recognition',
-        'Gene Expression Cancer RNA-Seq',
-        'Curated Breast Imaging Subset',
         'Labeled Faces in the Wild (LFW)'
     ]
 
@@ -55,22 +38,73 @@ def load_page1():
 
     if st.button("Load chosen dataset"):
         if selected_dataset == 'MNIST Handwritten Digits':
-            load_mnist_dataset()
+            dataset = load_mnist_dataset()
         elif selected_dataset == '20 Newsgroups Text Data':
-            load_20_newsgroups_dataset()
-        elif selected_dataset == 'Human Activity Recognition':
-            load_human_activity_dataset()
-        elif selected_dataset == 'Gene Expression Cancer RNA-Seq':
-            load_gene_expression_dataset()
-        elif selected_dataset == 'Curated Breast Imaging Subset':
-            load_breast_imaging_dataset()
+            dataset = load_20_newsgroups_dataset()
         elif selected_dataset == 'Labeled Faces in the Wild (LFW)':
-            load_lfw_dataset()
+            dataset = load_lfw_dataset()
+
+        if dataset is not None:
+            st.session_state['data'] = dataset
+            st.session_state['dataset_loaded'] = True
+            st.success("Dataset loaded successfully. Navigate to 'Choose Technique and Parameters' to continue.")
 
 
 def load_page2():
-    st.title("Page 2")
-    st.write("This is the content of page 2.")
+    st.title("Choose Technique and Parameters")
+
+    if 'dataset_loaded' in st.session_state and st.session_state['dataset_loaded']:
+        technique = st.selectbox("Select Reduction Technique", ["t-SNE", "UMAP", "TRIMAP", "PaCMAP"])
+
+        if technique == "t-SNE":
+            n_components = st.slider("Number of components", 2, 3, 2)
+            perplexity = st.slider("Perplexity", 5, 50, 30)
+            learning_rate = st.slider("Learning Rate", 10, 200, 200)
+            metric = st.selectbox("Metric", ["euclidean", "manhattan", "cosine"])
+
+        elif technique == "UMAP":
+            n_neighbors = st.slider("Number of Neighbors", 2, 100, 15)
+            min_dist = st.slider("Minimum Distance", 0.0, 0.99, 0.1)
+
+        elif technique == "TRIMAP":
+            n_neighbors = st.slider("Number of Neighbors", 2, 100, 10)
+
+        elif technique == "PaCMAP":
+            n_components = st.slider("Number of Components", 2, 3, 2)
+            n_neighbors = st.slider("Number of Neighbors", 2, 100, 10)
+
+        if st.button("Confirm and Run Technique"):
+            try:
+                if technique == "t-SNE":
+                    data = st.session_state['data']['data']
+                    reduced_data = perform_t_sne(data, n_components, perplexity, learning_rate, metric)
+                    st.session_state['reduced_data'] = reduced_data
+                    st.success("t-SNE completed!")
+
+                elif technique == "UMAP":
+                    data = st.session_state['data']['data']
+                    reduced_data = perform_umap(data, n_neighbors, min_dist)
+                    st.session_state['reduced_data'] = reduced_data
+                    st.success("UMAP completed!")
+
+                elif technique == "TRIMAP":
+                    data = st.session_state['data']['data']
+                    reduced_data = perform_trimap(data, n_neighbors)
+                    st.session_state['reduced_data'] = reduced_data
+                    st.success("TRIMAP completed!")
+
+                elif technique == "PaCMAP":
+                    data = st.session_state['data']['data']
+                    reduced_data = perform_pacmap(data, n_components, n_neighbors)
+                    st.session_state['reduced_data'] = reduced_data
+                    st.success("PaCMAP completed!")
+
+                st.session_state['page'] = "data_visualization"
+            except Exception as e:
+                st.error(f"Error performing dimensionality reduction: {e}")
+
+    else:
+        st.error("Please load a dataset in the 'Select Dataset' tab first.")
 
 
 def load_page3():

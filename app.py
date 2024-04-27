@@ -4,6 +4,7 @@ from datautils import *
 from itertools import product
 import time
 
+
 # To run up as website (with venv activated)
 # USAGE:  streamlit run app.py
 def select_dataset_page():
@@ -44,6 +45,7 @@ def select_dataset_page():
 
             except Exception as e:
                 st.error(f"Error loading dataset: {e}")
+
 
 # Strona do wyboru techniki i parametrów
 def choose_technique_page():
@@ -104,6 +106,7 @@ def choose_technique_page():
     else:
         st.error("Please load a dataset in the 'Select Dataset' tab first.")
 
+
 # Strona do wizualizacji danych
 def data_visualization_page():
     st.title("Data Visualization")
@@ -120,6 +123,7 @@ def data_visualization_page():
             st.warning("No data to visualize. Please complete a reduction technique.")
     else:
         st.error("Please load a dataset in the 'Select Dataset' tab first.")
+
 
 def experiments_page():
     if 'dataset_loaded' in st.session_state and st.session_state['dataset_loaded']:
@@ -253,6 +257,7 @@ def experiments_page():
     else:
         st.error("Please load a dataset in the 'Select Dataset' tab first.")
 
+
 def main():
     # SIDEBAR
     if 'page' not in st.session_state:
@@ -295,6 +300,7 @@ def main():
         data_visualization_page()
     elif st.session_state.page == "Experiments":
         experiments_page()
+
 
 if __name__ == "__main__":
     main()

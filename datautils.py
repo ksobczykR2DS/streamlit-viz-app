@@ -7,47 +7,28 @@ from keras.datasets import cifar10
 import os
 import pacmap
 import streamlit as st
-from sklearn.datasets import fetch_openml
+from sklearn.datasets import fetch_openml, fetch_20newsgroups
+from sklearn import datasets
 
 
 def load_mnist_dataset():
     st.write("Loading MNIST Handwritten Digits dataset...")
+    st.write("It might take a few minutes...")
     data = fetch_openml(name='mnist_784', version=1)
-    st.write("Completed loading MNIST Handwritten Digits. Please proceed to next page.")
     return data
+
 
 def load_20_newsgroups_dataset():
     st.write("Loading 20 Newsgroups Text Data dataset...")
-    data = load_20_newsgroups()
-    st.write("Completed loading 20 Newsgroups Text. Please proceed to next page.")
-    return data
-
-
-def load_human_activity_dataset():
-    st.write("Loading Human Activity Recognition dataset...")
-    data = load_human_activity()
-    st.write("Completed loading Human Activity Recognition. Please proceed to next page.")
-    return data
-
-
-def load_gene_expression_dataset():
-    st.write("Loading Gene Expression Cancer RNA-Seq dataset...")
-    data = load_gene_expression()
-    st.write("Completed loading Gene Expression Cancer RNA-Seq. Please proceed to next page.")
-    return data
-
-
-def load_breast_imaging_dataset():
-    st.write("Loading Curated Breast Imaging Subset dataset...")
-    data = load_breast_imaging()
-    st.write("Completed loading Curated Breast Imaging Subset. Please proceed to next page.")
+    st.write("It might take a few minutes...")
+    data = fetch_20newsgroups(subset='all')
     return data
 
 
 def load_lfw_dataset():
     st.write("Loading Labeled Faces in the Wild (LFW) dataset...")
-    data = load_lfw()
-    st.write("Completed loading Faces in the Wild. Please proceed to next page.")
+    st.write("It might take a few minutes...")
+    data = datasets.fetch_lfw_people(min_faces_per_person=70, resize=0.4)
     return data
 
 
