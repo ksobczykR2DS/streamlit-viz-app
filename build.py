@@ -28,29 +28,26 @@ def load_page1():
         st.write("Drag and drop a file (CSV or Excel) to upload, or choose from disk:")
         uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"])
 
-        # Przycisk do ładowania datasetu
-        if st.button("Load Dataset", key="load_predefined_dataset1"):
-            if uploaded_file:
-                try:
-                    dataset = upload_file(uploaded_file, sample_percentage)
-                    if isinstance(dataset, str):
-                        raise ValueError(dataset)
+        if uploaded_file and st.button("Load Dataset", key="load_predefined_dataset1"):
+            try:
+                dataset = upload_file(uploaded_file, sample_percentage)
+                if isinstance(dataset, str):
+                    raise ValueError(dataset)
 
-                    # Komunikat o rozmiarze pełnego datasetu
-                    st.success(f"The full dataset contains {dataset.shape[0]} rows.")
+                st.success(f"The full dataset contains {dataset.shape[0]} rows.")
 
-                    # Próbkowanie danych
-                    if isinstance(dataset, np.ndarray):
-                        dataset = pd.DataFrame(dataset)
 
-                    sampled_data = dataset.sample(frac=sample_percentage / 100, random_state=42)
+                if isinstance(dataset, np.ndarray):
+                    dataset = pd.DataFrame(dataset)
 
-                    st.session_state['data'] = sampled_data
-                    st.session_state['dataset_loaded'] = True
-                    st.success(f"Sample loaded successfully! Sample size: {sampled_data.shape[0]} rows.")
+                sampled_data = dataset.sample(frac=sample_percentage / 100, random_state=42)
 
-                except Exception as e:
-                    st.error(f"Error loading dataset: {e}")
+                st.session_state['data'] = sampled_data
+                st.session_state['dataset_loaded'] = True
+                st.success(f"Sample loaded successfully! Sample size: {sampled_data.shape[0]} rows.")
+
+            except Exception as e:
+                st.error(f"Error loading dataset: {e}")
 
     # Obsługa predefiniowanych datasetów
     elif selected_dataset in ["MNIST Handwritten Digits", "20 Newsgroups Text Data", "Labeled Faces in the Wild (LFW)"]:
@@ -112,26 +109,27 @@ def load_page2():
 
         if st.button("Confirm and Run Technique"):
             try:
+                data = st.session_state.get('data')
+
+                if data is None or data.empty:
+                    raise ValueError("Data is not loaded or empty.")
+
                 if technique == "t-SNE":
-                    data = st.session_state['data']['data']
                     reduced_data = perform_t_sne(data, n_components, perplexity, learning_rate, metric)
                     st.session_state['reduced_data'] = reduced_data
                     st.success("t-SNE completed!")
 
                 elif technique == "UMAP":
-                    data = st.session_state['data']['data']
                     reduced_data = perform_umap(data, n_neighbors, min_dist)
                     st.session_state['reduced_data'] = reduced_data
                     st.success("UMAP completed!")
 
                 elif technique == "TRIMAP":
-                    data = st.session_state['data']['data']
                     reduced_data = perform_trimap(data, n_neighbors)
                     st.session_state['reduced_data'] = reduced_data
                     st.success("TRIMAP completed!")
 
                 elif technique == "PaCMAP":
-                    data = st.session_state['data']['data']
                     reduced_data = perform_pacmap(data, n_components, n_neighbors)
                     st.session_state['reduced_data'] = reduced_data
                     st.success("PaCMAP completed!")
