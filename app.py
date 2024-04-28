@@ -12,11 +12,10 @@ def load_page1():
         It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
     """)
 
-    # Wybór datasetu
-    dataset_names = ['MNIST Handwritten Digits', '20 Newsgroups Text Data', 'Labeled Faces in the Wild (LFW)', "Upload Dataset"]
+    # Add the option for synthetic data
+    dataset_names = ['MNIST Handwritten Digits', '20 Newsgroups Text Data', 'Labeled Faces in the Wild (LFW)', "Upload Dataset", "Synthetic Data"]
     selected_dataset = st.selectbox("Choose a dataset to load", dataset_names)
 
-    # Suwak do wyboru wielkości próbkowania
     sample_percentage = st.slider(
         "Sample Size (in percentage)",
         min_value=1,
@@ -24,68 +23,25 @@ def load_page1():
         value=100
     )
 
-    # Obsługa przesyłania plików przez użytkownika
     if selected_dataset == "Upload Dataset":
         st.write("Drag and drop a file (CSV or Excel) to upload, or choose from disk:")
         uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"])
 
-        # Przycisk do ładowania datasetu
         if st.button("Load Dataset", key="load_predefined_dataset1"):
             if uploaded_file:
-                try:
-                    dataset = upload_file(uploaded_file, sample_percentage)
-                    if isinstance(dataset, str):
-                        raise ValueError(dataset)
+                handle_uploaded_file(uploaded_file, sample_percentage)
 
-                    # Komunikat o rozmiarze pełnego datasetu
-                    st.success(f"The full dataset contains {dataset.shape[0]} rows.")
+    elif selected_dataset == "Synthetic Data":
+        if st.button("Generate Synthetic Data"):
+            data, labels = create_synthetic_data(n_samples=1000, n_features=50, n_clusters=3)
+            sampled_data = pd.DataFrame(data).sample(frac=sample_percentage / 100, random_state=42)
+            st.session_state['data'] = sampled_data
+            st.session_state['dataset_loaded'] = True
+            st.success("Synthetic data generated and loaded successfully!")
 
-                    # Próbkowanie danych
-                    if isinstance(dataset, np.ndarray):
-                        dataset = pd.DataFrame(dataset)
-
-                    sampled_data = dataset.sample(frac=sample_percentage / 100, random_state=42)
-
-                    st.session_state['data'] = sampled_data
-                    st.session_state['dataset_loaded'] = True
-                    st.success(f"Sample loaded successfully! Sample size: {sampled_data.shape[0]} rows.")
-
-                except Exception as e:
-                    st.error(f"Error loading dataset: {e}")
-
-    # Obsługa predefiniowanych datasetów
-    elif selected_dataset in ["MNIST Handwritten Digits", "20 Newsgroups Text Data", "Labeled Faces in the Wild (LFW)"]:
+    else:
         if st.button("Load Dataset", key="load_predefined_dataset2"):
-            try:
-                if selected_dataset == 'MNIST Handwritten Digits':
-                    dataset = load_mnist_dataset()
-                elif selected_dataset == '20 Newsgroups Text Data':
-                    dataset = load_20_newsgroups_dataset()
-                elif selected_dataset == 'Labeled Faces in the Wild (LFW)':
-                    dataset = load_lfw_dataset()
-
-                if isinstance(dataset, np.ndarray):
-                    dataset = pd.DataFrame(dataset)
-
-                if hasattr(dataset, 'data'):
-                    dataset_size = dataset.data.shape[0]
-                else:
-                    dataset_size = dataset.shape[0]
-
-                st.success(f"The full dataset contains {dataset_size} rows.")
-
-                if hasattr(dataset, 'data'):
-                    sampled_data = pd.DataFrame(dataset.data).sample(frac=sample_percentage / 100, random_state=42)
-                    sampled_data['target'] = dataset.target.sample(frac=sample_percentage / 100, random_state=42).values
-                else:
-                    sampled_data = dataset.sample(frac=sample_percentage / 100, random_state=42)
-
-                st.session_state['data'] = sampled_data
-                st.session_state['dataset_loaded'] = True
-                st.success(f"Sample loaded successfully! Sample size: {sampled_data.shape[0]} rows.")
-
-            except Exception as e:
-                st.error(f"Error loading dataset: {e}")
+            handle_predefined_datasets(selected_dataset, sample_percentage)
 
 
 def load_page2():
