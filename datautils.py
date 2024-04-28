@@ -3,7 +3,7 @@ import numpy as np
 import trimap
 from umap.umap_ import UMAP
 from sklearn.manifold import TSNE
-from keras.datasets import cifar10
+from keras.datasets import cifar10, mnist
 import os
 import pacmap
 import streamlit as st

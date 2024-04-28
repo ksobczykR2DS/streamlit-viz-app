@@ -7,13 +7,13 @@ RUN apt-get update && apt-get install -y \
     g++ \
     build-essential \
     --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
-
-# Set the working directory in the Docker image
-WORKDIR /app
+    rm -rf /var/lib/apt/lists/* \
 
 # Copy the current directory contents into the container at /app
 COPY . /app
+
+# Set the working directory in the Docker image
+WORKDIR /app
 
 # Install any needed packages specified in requirements.txt
 RUN pip install -r requirements.txt
