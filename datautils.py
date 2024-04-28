@@ -8,6 +8,8 @@ from sklearn import datasets
 import trimap
 from umap.umap_ import UMAP
 import pacmap
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 def create_synthetic_data(n_samples=300, n_features=50, n_clusters=3):
@@ -183,3 +185,50 @@ def run_pacmap(dataset, n_neighbors, mn_ratio, fp_ratio):
         return pacmap_transformer.fit_transform(dataset)
     except Exception as e:
         return f"Error performing PaCMAP: {e}"
+
+
+def visualize_results(results):
+    for technique, data in results.items():
+        plt.figure(figsize=(10, 6))
+        sns.scatterplot(x=data[:, 0], y=data[:, 1], hue=st.session_state['data']['target'] if 'target' in st.session_state['data'] else None, palette='tab10', s=50)
+        plt.title(f"{technique} Visualization")
+        plt.xlabel("Dimension 1")
+        plt.ylabel("Dimension 2")
+        plt.grid(True)
+        st.pyplot(plt)
+
+
+# def perform_t_sne(dataset, n_components, perplexity, learning_rate, metric):
+#     """Perform t-SNE with specified parameters."""
+#     try:
+#         tsne = TSNE(n_components=n_components, perplexity=perplexity, learning_rate=learning_rate, metric=metric)
+#         return tsne.fit_transform(dataset)
+#     except Exception as e:
+#         return f"Error performing t-SNE: {e}"
+#
+#
+# def perform_umap(dataset, n_neighbors=15, min_dist=0.1):
+#     """Perform UMAP with specified parameters."""
+#     try:
+#         umap_model = UMAP(n_neighbors=n_neighbors, min_dist=min_dist, n_components=2)
+#         return umap_model.fit_transform(dataset)
+#     except Exception as e:
+#         return f"Error performing UMAP: {e}"
+#
+#
+# def perform_trimap(dataset, n_neighbors=15):
+#     """Perform TRIMAP with specified parameters."""
+#     try:
+#         trimap_model = trimap.TRIMAP(n_inliers=n_neighbors)
+#         return trimap_model.fit_transform(dataset)
+#     except Exception as e:
+#         return f"Error performing TRIMAP: {e}"
+#
+#
+# def perform_pacmap(dataset, n_components=2, n_neighbors=15):
+#     """Perform PaCMAP with specified parameters."""
+#     try:
+#         pac_map = pacmap.PaCMAP(n_components=n_components, n_neighbors=n_neighbors)
+#         return pac_map.fit_transform(dataset)
+#     except Exception as e:
+#         return f"Error performing PaCMAP: {e}"

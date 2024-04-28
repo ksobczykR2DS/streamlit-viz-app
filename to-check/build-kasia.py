@@ -1,9 +1,9 @@
+from matplotlib import pyplot as plt
+import seaborn as sns
 from datautils import *
 import streamlit as st
-import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
-
 
 # Page functions
 def load_page1():
@@ -14,8 +14,7 @@ def load_page1():
     """)
 
     # Wybór datasetu
-    dataset_names = ['MNIST Handwritten Digits', '20 Newsgroups Text Data', 'Labeled Faces in the Wild (LFW)', "\
-    Upload Dataset"]
+    dataset_names = ['MNIST Handwritten Digits', '20 Newsgroups Text Data', 'Labeled Faces in the Wild (LFW)', "Upload Dataset"]
     selected_dataset = st.selectbox("Choose a dataset to load", dataset_names)
 
     # Suwak do wyboru wielkości próbkowania
@@ -73,6 +72,7 @@ def load_page1():
 
                 st.success(f"The full dataset contains {dataset_size} rows.")
 
+
                 if hasattr(dataset, 'data'):
                     sampled_data = pd.DataFrame(dataset.data).sample(frac=sample_percentage / 100, random_state=42)
                     sampled_data['target'] = dataset.target.sample(frac=sample_percentage / 100, random_state=42).values
@@ -86,83 +86,9 @@ def load_page1():
             except Exception as e:
                 st.error(f"Error loading dataset: {e}")
 
-
 def load_page2():
-    tab1, tab2 = st.tabs(["Technique Selection", "Component Analysis"])
+    st.title("Choose Technique and Parameters")
 
-    with tab1:
-        st.title("Choose Technique and Parameters")
-
-        results = {}
-
-        if 'data' in st.session_state:
-            dataset = st.session_state['data']
-            use_t_sne = st.checkbox("Use t-SNE")
-            use_umap = st.checkbox("Use UMAP")
-            use_trimap = st.checkbox("Use TRIMAP")
-            use_pacmap = st.checkbox("Use PaCMAP")
-
-            params = {}
-
-            if use_t_sne:
-                st.subheader("t-SNE Parameters")
-                params['t_sne'] = {
-                    "perplexity": st.slider("Perplexity", 5, 100, 30),
-                    "early_exaggeration": st.slider("Early Exaggeration", 5, 25, 12),
-                    "learning_rate": st.slider("Learning Rate", 10, 1000, value=200, step=10),
-                    "n_iter": st.slider("Number of Iterations", 50, 1200, 300),
-                    "metric": st.selectbox("Metric", ["euclidean", "manhattan", "cosine"])
-                }
-
-            if use_umap:
-                st.subheader("UMAP Parameters")
-                params['umap'] = {
-                    "n_neighbors": st.slider("Number of Neighbors", 10, 200, 15),
-                    "min_dist": st.slider("Minimum Distance", 0.0, 0.99, 0.1),
-                    "metric": st.selectbox("Metric (UMAP)",
-                                           ["euclidean", "manhattan", "chebyshev", "minkowski", "canberra"])
-                }
-
-            if use_trimap:
-                st.subheader("TRIMAP Parameters")
-                params['trimap'] = {
-                    "n_inliers": st.slider("Number of Inliers", 2, 100, 10),
-                    "n_outliers": st.slider("Number of Outliers", 1, 50, 5),
-                    "n_random": st.slider("Number of Random", 1, 50, 5),
-                    "weight_adj": st.slider("Weight Adjustment", 100, 1000, 500),
-                    "n_iters": st.slider("Number of Iterations (TRIMAP)", 50, 1200, 300)
-                }
-
-            if use_pacmap:
-                st.subheader("PaCMAP Parameters")
-                params['pacmap'] = {
-                    "n_neighbors": st.slider("Number of Neighbors (PaCMAP)", 10, 200, 15),
-                    "mn_ratio": st.slider("MN Ratio", 0.1, 1.0, 0.5, 0.1),
-                    "fp_ratio": st.slider("FP Ratio", 1.0, 5.0, 2.0, 0.1)
-                }
-
-            if st.button("Confirm and Run Techniques"):
-                if use_t_sne:
-                    results['t-SNE'] = run_t_sne(dataset, **params['t_sne'])
-                if use_umap:
-                    results['UMAP'] = run_umap(dataset, **params['umap'])
-                if use_trimap:
-                    results['TRIMAP'] = run_trimap(dataset, **params['trimap'])
-                if use_pacmap:
-                    results['PaCMAP'] = run_pacmap(dataset, **params['pacmap'])
-
-            st.session_state['reduced_data'] = results
-            st.success("Selected techniques have been executed successfully.")
-
-        else:
-            st.error("Please load a dataset in the 'Load Dataset' tab first.")
-
-        with tab2:
-            st.title("PCA/Kernel PCA + Component Analysis")
-
-
-def load_page3():
-    st.title("Data Visualization")
     if 'dataset_loaded' in st.session_state and st.session_state['dataset_loaded']:
         technique = st.selectbox("Select Reduction Technique", ["t-SNE", "UMAP", "TRIMAP", "PaCMAP"])
 
@@ -231,7 +157,6 @@ def load_page3():
     st.title("Page 3")
     st.write("This is the content of page 3.")
 
-
 def load_page4():
     st.title("Page 4")
     st.write("This is the content of page")
@@ -268,9 +193,7 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-
 st.sidebar.markdown("<h1 style='text-align: center;'>Navigation Menu</h1>", unsafe_allow_html=True)
-
 
 st.sidebar.button("Load Dataset", on_click=select_page, args=("Load Dataset",))
 st.sidebar.button("Techniques Set Up", on_click=select_page, args=("Techniques Set Up",))

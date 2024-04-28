@@ -12,7 +12,6 @@ def load_page1():
         It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
     """)
 
-    # Add the option for synthetic data
     dataset_names = ['MNIST Handwritten Digits', '20 Newsgroups Text Data', 'Labeled Faces in the Wild (LFW)', "\
     Upload Dataset", "Synthetic Data"]
     selected_dataset = st.selectbox("Choose a dataset to load", dataset_names)
@@ -21,8 +20,7 @@ def load_page1():
         "Sample Size (in percentage)",
         min_value=1,
         max_value=100,
-        value=100,
-        key="sample_percentage_slider"
+        value=100
     )
 
     if selected_dataset == "Upload Dataset":
@@ -55,13 +53,18 @@ def load_page2():
         results = {}
 
         if 'data' in st.session_state:
-            dataset = st.session_state['data']
+            dataset = st.session_state.get('data')
+
+            if dataset is None or dataset.empty:
+                raise ValueError("Data is not loaded or empty.")
+
             use_t_sne = st.checkbox("Use t-SNE")
             use_umap = st.checkbox("Use UMAP")
             use_trimap = st.checkbox("Use TRIMAP")
             use_pacmap = st.checkbox("Use PaCMAP")
 
             params = {}
+            techniques = []
 
             if use_t_sne:
                 st.subheader("t-SNE Parameters")
@@ -72,6 +75,7 @@ def load_page2():
                     "n_iter": st.slider("Number of Iterations", 50, 1200, 300),
                     "metric": st.selectbox("Metric", ["euclidean", "manhattan", "cosine"])
                 }
+                techniques.append('t-SNE')
 
             if use_umap:
                 st.subheader("UMAP Parameters")
@@ -81,6 +85,7 @@ def load_page2():
                     "metric": st.selectbox("Metric (UMAP)",
                                            ["euclidean", "manhattan", "chebyshev", "minkowski", "canberra"])
                 }
+                techniques.append('UMAP')
 
             if use_trimap:
                 st.subheader("TRIMAP Parameters")
@@ -91,6 +96,7 @@ def load_page2():
                     "weight_adj": st.slider("Weight Adjustment", 100, 1000, 500),
                     "n_iters": st.slider("Number of Iterations (TRIMAP)", 50, 1200, 300)
                 }
+                techniques.append('TRIMAP')
 
             if use_pacmap:
                 st.subheader("PaCMAP Parameters")
@@ -99,8 +105,11 @@ def load_page2():
                     "mn_ratio": st.slider("MN Ratio", 0.1, 1.0, 0.5, 0.1),
                     "fp_ratio": st.slider("FP Ratio", 1.0, 5.0, 2.0, 0.1)
                 }
+                techniques.append('PacMAP')
 
             if st.button("Confirm and Run Techniques"):
+                results = {}
+
                 if use_t_sne:
                     results['t-SNE'] = run_t_sne(dataset, **params['t_sne'])
                 if use_umap:
@@ -112,6 +121,7 @@ def load_page2():
 
             st.session_state['reduced_data'] = results
             st.success("Selected techniques have been executed successfully.")
+            visualize_results(results)
 
         else:
             st.error("Please load a dataset in the 'Load Dataset' tab first.")
