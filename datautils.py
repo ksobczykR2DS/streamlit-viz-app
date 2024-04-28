@@ -57,8 +57,10 @@ def handle_uploaded_file(uploaded_file, sample_percentage):
         dataset = upload_file(uploaded_file, sample_percentage)
         if isinstance(dataset, str):
             raise ValueError(dataset)
+
         st.success(f"The full dataset contains {dataset.shape[0]} rows.")
         dataset_sampling(dataset, sample_percentage)
+
     except Exception as e:
         st.error(f"Error loading dataset: {e}")
 
@@ -72,7 +74,12 @@ def handle_predefined_datasets(selected_dataset, sample_percentage):
         elif selected_dataset == 'Labeled Faces in the Wild (LFW)':
             dataset = load_lfw_dataset()
 
-        st.success(f"The full dataset contains {dataset.shape[0]} rows.")
+        if hasattr(dataset, 'data'):
+            dataset_size = dataset.data.shape[0]
+        else:
+            dataset_size = dataset.shape[0]
+
+        st.success(f"The full dataset contains {dataset_size} rows.")
         dataset_sampling(dataset, sample_percentage)
     except Exception as e:
         st.error(f"Error loading dataset: {e}")
@@ -147,18 +154,30 @@ def upload_file(uploaded_file, sample_percentage=100):
 
 # Funkcje redukcji wymiarów
 def run_t_sne(dataset, **params):
-    print("Running t-SNE with params:", params)
+    if not isinstance(dataset, np.ndarray):
+        if isinstance(dataset, pd.DataFrame):
+            dataset = dataset.to_numpy()
+        else:
+            raise ValueError("Dataset must be a numpy array.")
+
+    if dataset.ndim != 2:
+        raise ValueError("Dataset must be a 2D array.")
 
     try:
-        if isinstance(dataset, np.ndarray) and dataset.ndim == 2:
-            print("Dataset shape:", dataset.shape)
-            tsne = TSNE(n_components=2, **params)
-            result = tsne.fit_transform(dataset)
-            return result
-        else:
-            raise ValueError("Dataset must be a 2D numpy array.")
+        tsne = TSNE(n_components=2, **params)
+        result = tsne.fit_transform(dataset)
+
+        if result is None or result.size == 0:
+            raise ValueError("t-SNE result is empty.")
+
+        return result
+
+    except ValueError as ve:
+        print("Value error during t-SNE:", ve)
+        return None
+
     except Exception as e:
-        print("Error performing t-SNE:", e)
+        print("Unexpected error during t-SNE:", e)
         return None
 
 
@@ -188,14 +207,32 @@ def run_pacmap(dataset, n_neighbors, mn_ratio, fp_ratio):
 
 
 def visualize_results(results):
+    if not results:
+        st.error("No results to visualize.")
+        return
+
     for technique, data in results.items():
+        if data is None or data.size == 0:
+            st.error(f"Data for {technique} is empty or null.")
+            continue
+
+        if len(data.shape) != 2:
+            st.error(f"Data for {technique} must be a 2D array.")
+            continue
+
         plt.figure(figsize=(10, 6))
-        sns.scatterplot(x=data[:, 0], y=data[:, 1], hue=st.session_state['data']['target'] if 'target' in st.session_state['data'] else None, palette='tab10', s=50)
-        plt.title(f"{technique} Visualization")
-        plt.xlabel("Dimension 1")
-        plt.ylabel("Dimension 2")
-        plt.grid(True)
-        st.pyplot(plt)
+        try:
+            hue = st.session_state['data']['target'] if 'target' in st.session_state['data'] else None
+            sns.scatterplot(x=data[:, 0], y=data[:, 1], hue=hue, palette='tab10', s=50)
+            plt.title(f"{technique} Visualization")
+            plt.xlabel("Dimension 1")
+            plt.ylabel("Dimension 2")
+            plt.grid(True)
+            st.pyplot(plt)
+        except ValueError as ve:
+            st.error(f"Value error during visualization: {ve}")
+        except Exception as e:
+            st.error(f"Unexpected error during visualization: {e}")
 
 
 # def perform_t_sne(dataset, n_components, perplexity, learning_rate, metric):

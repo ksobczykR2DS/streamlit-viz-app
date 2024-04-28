@@ -12,8 +12,7 @@ def load_page1():
         It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
     """)
 
-    dataset_names = ['MNIST Handwritten Digits', '20 Newsgroups Text Data', 'Labeled Faces in the Wild (LFW)', "\
-    Upload Dataset", "Synthetic Data"]
+    dataset_names = ['MNIST Handwritten Digits', '20 Newsgroups Text Data', 'Labeled Faces in the Wild (LFW)', "Upload Dataset", "Synthetic Data"]
     selected_dataset = st.selectbox("Choose a dataset to load", dataset_names)
 
     sample_percentage = st.slider(
@@ -27,12 +26,11 @@ def load_page1():
         st.write("Drag and drop a file (CSV or Excel) to upload, or choose from disk:")
         uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"])
 
-        if st.button("Load Dataset", key="load_predefined_dataset1"):
-            if uploaded_file:
-                handle_uploaded_file(uploaded_file, sample_percentage)
+        if uploaded_file and st.button("Load Dataset", key="load_predefined_dataset1"):
+            handle_uploaded_file(uploaded_file, sample_percentage)
 
     elif selected_dataset == "Synthetic Data":
-        if st.button("Generate Synthetic Data"):
+        if st.button("Generate Synthetic Data", key="load_synthetic_dataset"):
             data, labels = create_synthetic_data(n_samples=1000, n_features=50, n_clusters=3)
             sampled_data = pd.DataFrame(data).sample(frac=sample_percentage / 100, random_state=42)
             st.session_state['data'] = sampled_data
@@ -119,9 +117,9 @@ def load_page2():
                 if use_pacmap:
                     results['PaCMAP'] = run_pacmap(dataset, **params['pacmap'])
 
-            st.session_state['reduced_data'] = results
-            st.success("Selected techniques have been executed successfully.")
-            visualize_results(results)
+                st.session_state['reduced_data'] = results
+                st.success("Selected techniques have been executed successfully.")
+                visualize_results(results)
 
         else:
             st.error("Please load a dataset in the 'Load Dataset' tab first.")
