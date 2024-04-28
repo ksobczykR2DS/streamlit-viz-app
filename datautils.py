@@ -77,6 +77,7 @@ def load_dataset(name, sample_percentage=100):
     except Exception as e:
         return f"Error loading dataset: {e}"
 
+
 # Funkcja do ładowania plików przez użytkownika
 def upload_file(uploaded_file, sample_percentage=100):
     if uploaded_file:

@@ -41,3 +41,17 @@ tab2 - ustawienie i wybór technik
 tab3 - wizualizacje? 
 tab4 - eksperymenty (maksymalizacja wyniku z wybranych metryk przy x iteracjach)
 
+
+
+# Docker deployment
+![docker_roadmap.png](documentation-resources%2Fdocker_roadmap.png)
+
+Running docker file to build image:
+    docker build -t my_streamlit_app .
+
+Running app using docker:
+    docker run -p 8502:8502 my_streamlit_app
+
+To speed up the process:
+* Docker Desktop allows you to allocate more CPU and memory resources to Docker via its settings
+* Optimize your requirements.txt to avoid installing unnecessary or heavy packages
