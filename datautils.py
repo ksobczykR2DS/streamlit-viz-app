@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import trimap
-import umap
+from umap.umap_ import UMAP
 from sklearn.manifold import TSNE
 from keras.datasets import cifar10
 import os
@@ -101,38 +101,43 @@ def upload_file(uploaded_file, sample_percentage=100):
 
     return None
 
-# Funkcje redukcji wymiarów
-def perform_t_sne(dataset, n_components, perplexity, learning_rate, metric):
-    """Perform t-SNE with specified parameters."""
-    try:
-        tsne = TSNE(n_components=n_components, perplexity=perplexity, learning_rate=learning_rate, metric=metric)
-        return tsne.fit_transform(dataset)
-    except Exception as e:
-        return f"Error performing t-SNE: {e}"
 
-def perform_umap(dataset, n_neighbors=15, min_dist=0.1):
-    """Perform UMAP with specified parameters."""
+# Funkcje redukcji wymiarów
+def run_t_sne(dataset, **params):
+    print("Running t-SNE with params:", params)
     try:
-        umap_model = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, n_components=2)
-        return umap_model.fit_transform(dataset)
+        if isinstance(dataset, np.ndarray) and dataset.ndim == 2:
+            print("Dataset shape:", dataset.shape)
+            tsne = TSNE(n_components=2, **params)
+            result = tsne.fit_transform(dataset)
+            return result
+        else:
+            raise ValueError("Dataset must be a 2D numpy array.")
+    except Exception as e:
+        print("Error performing t-SNE:", e)
+        return None
+
+
+def run_umap(dataset, n_neighbors, min_dist, metric):
+    try:
+        umap = UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric=metric)
+        return umap.fit_transform(dataset)
     except Exception as e:
         return f"Error performing UMAP: {e}"
 
-def perform_trimap(dataset, n_neighbors=15):
-    """Perform TRIMAP with specified parameters."""
+
+def run_trimap(dataset, n_inliers, n_outliers, n_random, weight_adj, n_iters):
     try:
-        trimap_model = trimap.TRIMAP(n_inliers=n_neighbors)
-        return trimap_model.fit_transform(dataset)
+        trimap_transformer = trimap.TRIMAP(n_inliers=n_inliers, n_outliers=n_outliers,
+                                           n_random=n_random, weight_adj=weight_adj, n_iters=n_iters)
+        return trimap_transformer.fit_transform(dataset)
     except Exception as e:
         return f"Error performing TRIMAP: {e}"
 
-def perform_pacmap(dataset, n_components=2, n_neighbors=15):
-    """Perform PaCMAP with specified parameters."""
+
+def run_pacmap(dataset, n_neighbors, mn_ratio, fp_ratio):
     try:
-        pac_map = pacmap.PaCMAP(n_components=n_components, n_neighbors=n_neighbors)
-        return pac_map.fit_transform(dataset)
+        pacmap_transformer = pacmap.PaCMAP(n_neighbors=n_neighbors, MN_ratio=mn_ratio, FP_ratio=fp_ratio)
+        return pacmap_transformer.fit_transform(dataset)
     except Exception as e:
         return f"Error performing PaCMAP: {e}"
-
-
-
