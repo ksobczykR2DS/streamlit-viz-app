@@ -32,7 +32,7 @@ def load_lfw_dataset():
     st.write("It might take a few minutes...")
     data = datasets.fetch_lfw_people(min_faces_per_person=70, resize=0.4)
     num_samples, num_features = data.data.shape
-    feature_names = [f"feature_{i}" for i in range(num_features)]  # Generate column names
+    feature_names = [f"feature_{i}" for i in range(num_features)]
     df = pd.DataFrame(data.data, columns=feature_names)
     return df
 

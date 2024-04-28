@@ -17,9 +17,9 @@ def select_dataset_page():
         "Sample Size (in percentage)",
         min_value=1,
         max_value=100,
-        value=100,  # Domyślnie 100%
+        value=100,
         key="sample_percentage_slider"
-    )  # Domyślnie 100% danych
+    )
 
     if dataset_name == "Upload Dataset":
         st.write("Drag and drop a file (CSV or Excel) to upload, or choose from disk:")
