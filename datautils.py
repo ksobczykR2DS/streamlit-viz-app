@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.manifold import TSNE
-from keras.datasets import cifar10
+from keras.datasets import cifar10, mnist
 import os
 import streamlit as st
 from sklearn.datasets import fetch_openml, fetch_20newsgroups
@@ -9,6 +9,88 @@ from sklearn import datasets
 import trimap
 from umap.umap_ import UMAP
 import pacmap
+
+
+def create_synthetic_data(n_samples=300, n_features=50, n_clusters=3):
+    """
+    Generates a synthetic dataset using a mixture of Gaussian distributions.
+
+    Parameters:
+    - n_samples : int, default 300
+        Total number of samples to generate.
+    - n_features : int, default 50
+        Number of features for each sample.
+    - n_clusters : int, default 3
+        Number of distinct clusters.
+
+    Returns:
+    - data : numpy.ndarray
+        The generated dataset as a 2D numpy array (n_samples, n_features).
+    - labels : numpy.ndarray
+        The integer labels corresponding to cluster membership of each sample.
+    """
+    np.random.seed(42)  # For reproducibility
+    data = []
+    labels = []
+    samples_per_cluster = n_samples // n_clusters
+
+    for i in range(n_clusters):
+        # Generate random mean and covariance
+        mean = np.random.rand(n_features) * 100
+        cov = np.eye(n_features) * np.random.rand(n_features)  # Diagonal covariance
+
+        # Generate samples for the cluster
+        cluster_data = np.random.multivariate_normal(mean, cov, samples_per_cluster)
+        data.append(cluster_data)
+        labels += [i] * samples_per_cluster
+
+    # Concatenate all cluster data and labels
+    data = np.vstack(data)
+    labels = np.array(labels)
+
+    return data, labels
+
+
+def handle_uploaded_file(uploaded_file, sample_percentage):
+    try:
+        dataset = upload_file(uploaded_file, sample_percentage)
+        if isinstance(dataset, str):
+            raise ValueError(dataset)
+        st.success(f"The full dataset contains {dataset.shape[0]} rows.")
+        dataset_sampling(dataset, sample_percentage)
+    except Exception as e:
+        st.error(f"Error loading dataset: {e}")
+
+
+def handle_predefined_datasets(selected_dataset, sample_percentage):
+    try:
+        if selected_dataset == 'MNIST Handwritten Digits':
+            dataset = load_mnist_dataset()
+        elif selected_dataset == '20 Newsgroups Text Data':
+            dataset = load_20_newsgroups_dataset()
+        elif selected_dataset == 'Labeled Faces in the Wild (LFW)':
+            dataset = load_lfw_dataset()
+
+        st.success(f"The full dataset contains {dataset.shape[0]} rows.")
+        dataset_sampling(dataset, sample_percentage)
+    except Exception as e:
+        st.error(f"Error loading dataset: {e}")
+
+
+def dataset_sampling(dataset, sample_percentage):
+    if isinstance(dataset, np.ndarray):
+        dataset = pd.DataFrame(dataset)
+
+    if hasattr(dataset, 'data'):
+        sampled_data = pd.DataFrame(dataset.data).sample(frac=sample_percentage / 100, random_state=42)
+        sampled_data['target'] = dataset.target.sample(frac=sample_percentage / 100, random_state=42).values
+    else:
+        sampled_data = dataset.sample(frac=sample_percentage / 100, random_state=42)
+        sampled_data = sampled_data.values
+
+    st.session_state['data'] = sampled_data
+    st.session_state['dataset_loaded'] = True
+    st.success(f"Sample loaded successfully! Sample size: {sampled_data.shape[0]} rows.")
 
 
 def load_mnist_dataset():
@@ -35,47 +117,6 @@ def load_lfw_dataset():
     feature_names = [f"feature_{i}" for i in range(num_features)]
     df = pd.DataFrame(data.data, columns=feature_names)
     return df
-
-
-# Funkcja do ładowania zestawu danych
-def load_dataset(name, sample_percentage=100):
-    """Load a dataset by name with error handling."""
-    try:
-        if name == "MNIST":
-            data = fetch_openml('mnist_784', as_frame=True)
-        elif name == "Fashion-MNIST":
-            data = fetch_openml('Fashion-MNIST', as_frame=True)
-        elif name == "CIFAR-10":
-            (train_images, train_labels), (test_images, test_labels) = cifar10.load_data()
-            data = {
-                'data': np.concatenate((train_images, test_images)).reshape(-1, 32 * 32 * 3),
-                'target': np.concatenate((train_labels, test_labels)).flatten()
-            }
-        elif name == "20 Newsgroups":
-            data = fetch_20newsgroups(subset='all', as_frame=True)
-        elif name == "LFW":
-            data = datasets.fetch_lfw_people(min_faces_per_person=70, resize=0.4)
-            data = {
-                'data': data.images.reshape(-1, data.images.shape[-1]),
-                'target': data.target.tolist()
-            }
-        else:
-            raise ValueError("Invalid dataset name")
-
-        if not isinstance(data, pd.DataFrame):
-            if 'data' in data and 'target' in data:
-                df = pd.DataFrame(data['data'])
-                df['target'] = data['target']
-                data = df
-            else:
-                raise ValueError("Invalid dataset structure")
-
-        # Próbkowanie
-        sample_data = data.sample(frac=sample_percentage / 100, random_state=42)
-
-        return sample_data
-    except Exception as e:
-        return f"Error loading dataset: {e}"
 
 
 # Funkcja do ładowania plików przez użytkownika
@@ -106,6 +147,7 @@ def upload_file(uploaded_file, sample_percentage=100):
 # Funkcje redukcji wymiarów
 def run_t_sne(dataset, **params):
     print("Running t-SNE with params:", params)
+
     try:
         if isinstance(dataset, np.ndarray) and dataset.ndim == 2:
             print("Dataset shape:", dataset.shape)

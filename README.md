@@ -3,8 +3,7 @@ Interactive app designed for advanced data visualization using techniques like t
 
 
 Projekt:
-Stworzenie przy pomocy biblioteki Streamlit narzędzia do wizualizacji danych. Powinno ono zawierać metody state-of-the-art tj. t-SNE, UMAP, TRIMAP, PaCMAP. 
-Ma posiadać możliwość wczytywania danych, ich ograniczania (np. wzięcie tylko 10k sampli), wizualizacji wybraną metodą, liczenie wybranych (użytych na zajęciach) dwóch metryk.
+Stworzenie przy pomocy biblioteki Streamlit narzędzia do wizualizacji danych. Powinno ono zawierać metody state-of-the-art tj. t-SNE, UMAP, TRIMAP, PaCMAP. Ma posiadać możliwość wczytywania danych, ich ograniczania (np. wzięcie tylko 10k sampli), wizualizacji wybraną metodą, liczenie wybranych (użytych na zajęciach)  dwóch metryk.
 
 
 
@@ -43,6 +42,19 @@ tab3 - wizualizacje?
 tab4 - eksperymenty (maksymalizacja wyniku z wybranych metryk przy x iteracjach)
 
 
+
+# Docker deployment
+![docker_roadmap.png](documentation-resources%2Fdocker_roadmap.png)
+
+Running docker file to build image:
+    docker build -t my_streamlit_app .
+
+Running app using docker:
+    docker run -p 8502:8502 my_streamlit_app
+
+To speed up the process:
+* Docker Desktop allows you to allocate more CPU and memory resources to Docker via its settings
+* Optimize your requirements.txt to avoid installing unnecessary or heavy packages
 
 
 
@@ -156,3 +168,15 @@ fp_ratio:
 
 # Components Analysis
 
+# Docker deployment
+![docker_roadmap.png](documentation-resources%2Fdocker_roadmap.png)
+
+Running docker file to build image:
+    docker build -t my_streamlit_app .
+
+Running app using docker:
+    docker run -p 8502:8502 my_streamlit_app
+
+To speed up the process:
+* Docker Desktop allows you to allocate more CPU and memory resources to Docker via its settings
+* Optimize your requirements.txt to avoid installing unnecessary or heavy packages

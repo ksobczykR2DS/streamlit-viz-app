@@ -1,17 +1,20 @@
-import matplotlib.pyplot as plt
+from datautils import *
 import streamlit as st
 
-from build import select_page
-from datautils import *
-from itertools import product
-import time
+st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
 
 
-# To run up as website (with venv activated)
-# USAGE:  streamlit run app.py
-def select_dataset_page():
-    st.title("Select Dataset")
-    dataset_name = st.selectbox("Choose a dataset or upload your own", ["MNIST", "Fashion-MNIST", "CIFAR-10", "Upload Dataset"])
+# Page functions
+def load_page1():
+    st.title("Dimensionality Reduction")
+    st.write("""
+        Interactive app designed for advanced data visualization using techniques like t-SNE, UMAP, TRIMAP, and PaCMAP.
+        It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
+    """)
+
+    # Add the option for synthetic data
+    dataset_names = ['MNIST Handwritten Digits', '20 Newsgroups Text Data', 'Labeled Faces in the Wild (LFW)', "Upload Dataset", "Synthetic Data"]
+    selected_dataset = st.selectbox("Choose a dataset to load", dataset_names)
 
     sample_percentage = st.slider(
         "Sample Size (in percentage)",
@@ -21,303 +24,154 @@ def select_dataset_page():
         key="sample_percentage_slider"
     )
 
-    if dataset_name == "Upload Dataset":
+    if selected_dataset == "Upload Dataset":
         st.write("Drag and drop a file (CSV or Excel) to upload, or choose from disk:")
-        uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"], key="file_uploader")
+        uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"])
 
-        if uploaded_file:
-            try:
-                data = upload_file(uploaded_file, sample_percentage)
-                if isinstance(data, str):
-                    raise ValueError(data)
+        if st.button("Load Dataset", key="load_predefined_dataset1"):
+            if uploaded_file:
+                handle_uploaded_file(uploaded_file, sample_percentage)
 
-
-                sample_data = data.sample(frac=sample_percentage / 100, random_state=42)
-
-                st.session_state['data'] = sample_data
-                st.session_state['dataset_loaded'] = True
-                st.success(f"Dataset successfully loaded! Size: {sample_data.shape[0]} rows.")
-
-                if st.button("Proceed to Choose Technique"):
-                    st.session_state['page'] = "choose_technique"
-
-            except Exception as e:
-                st.error(f"Error loading dataset: {e}")
-
-    elif dataset_name in ["MNIST", "Fashion-MNIST", "CIFAR-10"]:
-        if st.button("Load Dataset", key="load_dataset_button"):
-            try:
-                data = load_dataset(dataset_name, sample_percentage)
-
-                if isinstance(data, str):
-                    raise ValueError(data)
-
-                sample_data = data.sample(frac=sample_percentage / 100, random_state=42)
-                st.session_state['data'] = sample_data
-                st.session_state['dataset_loaded'] = True
-                st.success(f"Dataset successfully loaded! Sample size: {sample_data.shape[0]} rows.")
-
-                if st.button("Proceed to Choose Technique", key="proceed_to_technique_2"):
-                    st.session_state['page'] = "choose_technique"
-
-            except Exception as e:
-                st.error(f"Error loading dataset: {e}")
-
-
-# Strona do wyboru techniki i parametrów
-def choose_technique_page():
-    st.title("Choose Technique and Parameters")
-    if 'dataset_loaded' in st.session_state and st.session_state['dataset_loaded']:
-        if st.button("Back to Dataset Selection"):
-            st.session_state['page'] = "select_dataset"
-
-        technique = st.selectbox("Select Reduction Technique", ["t-SNE", "UMAP", "TRIMAP", "PaCMAP"])
-
-        if technique == "t-SNE":
-            n_components = st.slider("Number of components", 2, 3, 2)
-            perplexity = st.slider("Perplexity", 5, 50, 30)
-            learning_rate = st.slider("Learning Rate", 10, 200, 200)
-            metric = st.selectbox("Metric", ["euclidean", "manhattan", "cosine"])
-
-        elif technique == "UMAP":
-            n_neighbors = st.slider("Number of Neighbors", 2, 100, 15)
-            min_dist = st.slider("Minimum Distance", 0.0, 0.99, 0.1)
-
-        elif technique == "TRIMAP":
-            n_neighbors = st.slider("Number of Neighbors", 2, 100, 10)
-
-        elif technique == "PaCMAP":
-            n_components = st.slider("Number of Components", 2, 3, 2)
-            n_neighbors = st.slider("Number of Neighbors", 2, 100, 10)
-
-        if st.button("Confirm and Run Technique"):
-            try:
-                if technique == "t-SNE":
-                    data = st.session_state['data']['data']
-                    reduced_data = run_t_sne(data, n_components, perplexity, learning_rate, metric)
-                    st.session_state['reduced_data'] = reduced_data
-                    st.success("t-SNE completed!")
-
-                elif technique == "UMAP":
-                    data = st.session_state['data']['data']
-                    reduced_data = run_umap(data, n_neighbors, min_dist)
-                    st.session_state['reduced_data'] = reduced_data
-                    st.success("UMAP completed!")
-
-                elif technique == "TRIMAP":
-                    data = st.session_state['data']['data']
-                    reduced_data = run_trimap(data, n_neighbors)
-                    st.session_state['reduced_data'] = reduced_data
-                    st.success("TRIMAP completed!")
-
-                elif technique == "PaCMAP":
-                    data = st.session_state['data']['data']
-                    reduced_data = run_pacmap(data, n_components, n_neighbors)
-                    st.session_state['reduced_data'] = reduced_data
-                    st.success("PaCMAP completed!")
-
-                st.session_state['page'] = "data_visualization"
-            except Exception as e:
-                st.error(f"Error performing dimensionality reduction: {e}")
+    elif selected_dataset == "Synthetic Data":
+        if st.button("Generate Synthetic Data"):
+            data, labels = create_synthetic_data(n_samples=1000, n_features=50, n_clusters=3)
+            sampled_data = pd.DataFrame(data).sample(frac=sample_percentage / 100, random_state=42)
+            st.session_state['data'] = sampled_data
+            st.session_state['dataset_loaded'] = True
+            st.success("Synthetic data generated and loaded successfully!")
 
     else:
-        st.error("Please load a dataset in the 'Select Dataset' tab first.")
+        if st.button("Load Dataset", key="load_predefined_dataset2"):
+            handle_predefined_datasets(selected_dataset, sample_percentage)
 
 
-# Strona do wizualizacji danych
-def data_visualization_page():
-    st.title("Data Visualization")
-    if 'dataset_loaded' in st.session_state and st.session_state['dataset_loaded']:
-        if st.button("Back to Technique Selection"):
-            st.session_state['page'] = "choose_technique"
+def load_page2():
+    tab1, tab2 = st.tabs(["Technique Selection", "Component Analysis"])
 
-        if 'reduced_data' in st.session_state:
-            fig, ax = plt.subplots()
-            ax.scatter(st.session_state['reduced_data'][:, 0], st.session_state['reduced_data'][:, 1],
-                       c=st.session_state['data']['target'], cmap='viridis')
-            st.pyplot(fig)
+    with tab1:
+        st.title("Choose Technique and Parameters")
+
+        results = {}
+
+        if 'data' in st.session_state:
+            dataset = st.session_state['data']
+            use_t_sne = st.checkbox("Use t-SNE")
+            use_umap = st.checkbox("Use UMAP")
+            use_trimap = st.checkbox("Use TRIMAP")
+            use_pacmap = st.checkbox("Use PaCMAP")
+
+            params = {}
+
+            if use_t_sne:
+                st.subheader("t-SNE Parameters")
+                params['t_sne'] = {
+                    "perplexity": st.slider("Perplexity", 5, 100, 30),
+                    "early_exaggeration": st.slider("Early Exaggeration", 5, 25, 12),
+                    "learning_rate": st.slider("Learning Rate", 10, 1000, value=200, step=10),
+                    "n_iter": st.slider("Number of Iterations", 50, 1200, 300),
+                    "metric": st.selectbox("Metric", ["euclidean", "manhattan", "cosine"])
+                }
+
+            if use_umap:
+                st.subheader("UMAP Parameters")
+                params['umap'] = {
+                    "n_neighbors": st.slider("Number of Neighbors", 10, 200, 15),
+                    "min_dist": st.slider("Minimum Distance", 0.0, 0.99, 0.1),
+                    "metric": st.selectbox("Metric (UMAP)",
+                                           ["euclidean", "manhattan", "chebyshev", "minkowski", "canberra"])
+                }
+
+            if use_trimap:
+                st.subheader("TRIMAP Parameters")
+                params['trimap'] = {
+                    "n_inliers": st.slider("Number of Inliers", 2, 100, 10),
+                    "n_outliers": st.slider("Number of Outliers", 1, 50, 5),
+                    "n_random": st.slider("Number of Random", 1, 50, 5),
+                    "weight_adj": st.slider("Weight Adjustment", 100, 1000, 500),
+                    "n_iters": st.slider("Number of Iterations (TRIMAP)", 50, 1200, 300)
+                }
+
+            if use_pacmap:
+                st.subheader("PaCMAP Parameters")
+                params['pacmap'] = {
+                    "n_neighbors": st.slider("Number of Neighbors (PaCMAP)", 10, 200, 15),
+                    "mn_ratio": st.slider("MN Ratio", 0.1, 1.0, 0.5, 0.1),
+                    "fp_ratio": st.slider("FP Ratio", 1.0, 5.0, 2.0, 0.1)
+                }
+
+            if st.button("Confirm and Run Techniques"):
+                if use_t_sne:
+                    results['t-SNE'] = run_t_sne(dataset, **params['t_sne'])
+                if use_umap:
+                    results['UMAP'] = run_umap(dataset, **params['umap'])
+                if use_trimap:
+                    results['TRIMAP'] = run_trimap(dataset, **params['trimap'])
+                if use_pacmap:
+                    results['PaCMAP'] = run_pacmap(dataset, **params['pacmap'])
+
+            st.session_state['reduced_data'] = results
+            st.success("Selected techniques have been executed successfully.")
+
         else:
-            st.warning("No data to visualize. Please complete a reduction technique.")
-    else:
-        st.error("Please load a dataset in the 'Select Dataset' tab first.")
+            st.error("Please load a dataset in the 'Load Dataset' tab first.")
+
+        with tab2:
+            st.title("Component Analysis")
 
 
-def experiments_page():
-    if 'dataset_loaded' in st.session_state and st.session_state['dataset_loaded']:
-        st.title("Experiments")
-
-        technique = st.selectbox("Select Reduction Technique for Experimentation", ["t-SNE", "UMAP", "TRIMAP", "PaCMAP"])
-
-        if technique == "t-SNE":
-            n_components_range = st.slider("Number of Components", 2, 3, (2, 3))
-            perplexity_range = st.slider("Perplexity Range", 5, 50, (5, 50))
-            learning_rate_range = st.slider("Learning Rate Range", 10, 200, (10, 200))
-
-            param_combinations = list(product(
-                range(n_components_range[0], n_components_range[1] + 1),
-                range(perplexity_range[0], perplexity_range[1] + 1),
-                range(learning_rate_range[0], 200, 10)
-            ))
-
-            progress_bar = st.progress(0)
-            progress_steps = len(param_combinations)
-
-            results = []
-            for step, (n_components, perplexity, learning_rate) in enumerate(param_combinations):
-                time.sleep(0.05)
-                progress_bar.progress((step + 1) / progress_steps * 100)
-
-                reduced_data = run_t_sne(
-                    st.session_state['data']['data'],
-                    n_components,
-                    perplexity,
-                    learning_rate,
-                    "euclidean"
-                )
-                results.append({
-                    "n_components": n_components,
-                    "perplexity": perplexity,
-                    "learning_rate": learning_rate,
-                    "reduced_data": reduced_data
-                })
-
-            st.session_state['experiment_results_t_sne'] = results
-            st.write("Experiments completed!")
-
-        elif technique == "UMAP":
-            n_neighbors_range = st.slider("Number of Neighbors Range", 2, 100, (2, 100))
-            min_dist_range = np.linspace(0.1, 0.5, 5)
-
-            param_combinations = list(product(
-                range(n_neighbors_range[0], n_neighbors_range[1] + 1),
-                min_dist_range
-            ))
-
-            progress_bar = st.progress(0)
-            progress_steps = len(param_combinations)
-
-            results = []
-            for step, (n_neighbors, min_dist) in enumerate(param_combinations):
-                time.sleep(0.05)
-                progress_bar.progress((step + 1) / progress_steps * 100)
-
-                reduced_data = run_umap(
-                    st.session_state['data']['data'],
-                    n_neighbors,
-                    min_dist
-                )
-                results.append({
-                    "n_neighbors": n_neighbors,
-                    "min_dist": min_dist,
-                    "reduced_data": reduced_data
-                })
-
-            st.session_state['experiment_results_umap'] = results
-            st.write("Experiments completed!")
-
-        elif technique == "TRIMAP":
-            n_neighbors_range = st.slider("Number of Neighbors Range", 2, 100, (5, 20))
-
-            param_combinations = list(product(range(n_neighbors_range[0], n_neighbors_range[1] + 1)))
-
-            progress_bar = st.progress(0)
-            progress_steps = len(param_combinations)
-
-            results = []
-            for step, n_neighbors in enumerate(param_combinations):
-                time.sleep(0.05)
-                progress_bar.progress((step + 1) / progress_steps * 100)
-
-                reduced_data = run_trimap(
-                    st.session_state['data']['data'],
-                    n_neighbors[0]
-                )
-                results.append({
-                    "n_neighbors": n_neighbors[0],
-                    "reduced_data": reduced_data
-                })
-
-            st.session_state['experiment_results_trimap'] = results
-            st.write("Experiments completed!")
-
-        elif technique == "PaCMAP":
-            n_components_range = st.slider("Number of Components Range", 2, 3, (2, 3))
-            n_neighbors_range = st.slider("Number of Neighbors Range", 2, 100, (5, 20))
-
-            param_combinations = list(product(
-                range(n_components_range[0], n_components_range[1] + 1),
-                range(n_neighbors_range[0], n_neighbors_range[1] + 1)
-            ))
-
-            progress_bar = st.progress(0)
-            progress_steps = len(param_combinations)
-
-            results = []
-            for step, (n_components, n_neighbors) in enumerate(param_combinations):
-                time.sleep(0.05)
-                progress_bar.progress((step + 1) / progress_steps * 100)
-
-                reduced_data = run_pacmap(
-                    st.session_state['data']['data'],
-                    n_components,
-                    n_neighbors
-                )
-                results.append({
-                    "n_components": n_components,
-                    "n_neighbors": n_neighbors,
-                    "reduced_data": reduced_data
-                })
-
-            st.session_state['experiment_results_pacmap'] = results
-            st.write("Experiments completed!")
-
-    else:
-        st.error("Please load a dataset in the 'Select Dataset' tab first.")
+def load_page3():
+    st.title("Page 3")
+    st.write("This is the content of page 3.")
 
 
-def main():
-    # SIDEBAR
-    if 'page' not in st.session_state:
-        st.session_state.page = "Load Dataset"
-
-    st.markdown(
-        """
-        <style>
-        div.stButton > button:first-child {
-            width: 100%;
-            margin-bottom: 10px;
-        }
-        </style>
-        """, unsafe_allow_html=True
-    )
-
-    st.markdown(
-        """
-        <style>
-        /* CSS selector for the sidebar title */
-        .css-1d391kg {
-            text-align: center;
-        }
-        </style>
-        """, unsafe_allow_html=True
-    )
-
-    st.sidebar.markdown("<h1 style='text-align: center;'>Navigation Menu</h1>", unsafe_allow_html=True)
-
-    st.sidebar.button("Load Dataset", on_click=select_page, args=("Load Dataset",))
-    st.sidebar.button("Techniques Set Up", on_click=select_page, args=("Techniques Set Up",))
-    st.sidebar.button("View Data", on_click=select_page, args=("View Data",))
-    st.sidebar.button("Experiments", on_click=select_page, args=("Experiments",))
-
-    if st.session_state.page == "Load Dataset":
-        select_dataset_page()
-    elif st.session_state.page == "Techniques Set Up":
-        choose_technique_page()
-    elif st.session_state.page == "View Data":
-        data_visualization_page()
-    elif st.session_state.page == "Experiments":
-        experiments_page()
+def load_page4():
+    st.title("Page 4")
+    st.write("This is the content of page")
 
 
-if __name__ == "__main__":
-    main()
+# Operation Management Functions
+def select_page(page_name):
+    st.session_state.page = page_name
+
+
+# SIDEBAR
+if 'page' not in st.session_state:
+    st.session_state.page = "Load Dataset"
+
+st.markdown(
+    """
+    <style>
+    div.stButton > button:first-child {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    </style>
+    """, unsafe_allow_html=True
+)
+
+st.markdown(
+    """
+    <style>
+    /* CSS selector for the sidebar title */
+    .css-1d391kg {
+        text-align: center;
+    }
+    </style>
+    """, unsafe_allow_html=True
+)
+
+st.sidebar.markdown("<h1 style='text-align: center;'>Navigation Menu</h1>", unsafe_allow_html=True)
+
+st.sidebar.button("Load Dataset", on_click=select_page, args=("Load Dataset",))
+st.sidebar.button("Techniques Set Up", on_click=select_page, args=("Techniques Set Up",))
+st.sidebar.button("View Data", on_click=select_page, args=("View Data",))
+st.sidebar.button("Experiments", on_click=select_page, args=("Experiments",))
+
+if st.session_state.page == "Load Dataset":
+    load_page1()
+elif st.session_state.page == "Techniques Set Up":
+    load_page2()
+elif st.session_state.page == "View Data":
+    load_page3()
+elif st.session_state.page == "Experiments":
+    load_page4()
