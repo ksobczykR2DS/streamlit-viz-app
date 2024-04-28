@@ -161,7 +161,7 @@ def load_page2():
             st.error("Please load a dataset in the 'Load Dataset' tab first.")
 
         with tab2:
-            st.title("Component Analysis")
+            st.title("PCA/Kernel PCA + Component Analysis")
 
 
 def load_page3():

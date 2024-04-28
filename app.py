@@ -13,7 +13,8 @@ def load_page1():
     """)
 
     # Add the option for synthetic data
-    dataset_names = ['MNIST Handwritten Digits', '20 Newsgroups Text Data', 'Labeled Faces in the Wild (LFW)', "Upload Dataset", "Synthetic Data"]
+    dataset_names = ['MNIST Handwritten Digits', '20 Newsgroups Text Data', 'Labeled Faces in the Wild (LFW)', "\
+    Upload Dataset", "Synthetic Data"]
     selected_dataset = st.selectbox("Choose a dataset to load", dataset_names)
 
     sample_percentage = st.slider(
@@ -46,7 +47,7 @@ def load_page1():
 
 
 def load_page2():
-    tab1, tab2 = st.tabs(["Technique Selection", "Component Analysis"])
+    tab1, tab2 = st.tabs(["Technique Selection and Visualization", "Component Analysis"])
 
     with tab1:
         st.title("Choose Technique and Parameters")
@@ -116,20 +117,14 @@ def load_page2():
             st.error("Please load a dataset in the 'Load Dataset' tab first.")
 
         with tab2:
-            st.title("Component Analysis")
+            st.title("PCA/Kernel PCA + Component Analysis")
 
 
 def load_page3():
-    st.title("Page 3")
-    st.write("This is the content of page 3.")
-
-
-def load_page4():
-    st.title("Page 4")
+    st.title("Experiments")
     st.write("This is the content of page")
 
 
-# Operation Management Functions
 def select_page(page_name):
     st.session_state.page = page_name
 
@@ -163,15 +158,12 @@ st.markdown(
 st.sidebar.markdown("<h1 style='text-align: center;'>Navigation Menu</h1>", unsafe_allow_html=True)
 
 st.sidebar.button("Load Dataset", on_click=select_page, args=("Load Dataset",))
-st.sidebar.button("Techniques Set Up", on_click=select_page, args=("Techniques Set Up",))
-st.sidebar.button("View Data", on_click=select_page, args=("View Data",))
+st.sidebar.button("Techniques Set Up", on_click=select_page, args=("Techniques Set Up and Visualization",))
 st.sidebar.button("Experiments", on_click=select_page, args=("Experiments",))
 
 if st.session_state.page == "Load Dataset":
     load_page1()
-elif st.session_state.page == "Techniques Set Up":
+elif st.session_state.page == "Techniques Set Up and Visualization":
     load_page2()
-elif st.session_state.page == "View Data":
-    load_page3()
 elif st.session_state.page == "Experiments":
-    load_page4()
+    load_page3()

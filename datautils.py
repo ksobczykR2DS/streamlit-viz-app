@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from sklearn.manifold import TSNE
-from keras.datasets import cifar10, mnist
 import os
 import streamlit as st
 from sklearn.datasets import fetch_openml, fetch_20newsgroups
