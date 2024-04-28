@@ -1,3 +1,5 @@
+from matplotlib import pyplot as plt
+import seaborn as sns
 from datautils import *
 import streamlit as st
 
@@ -124,8 +126,26 @@ def load_page2():
                     reduced_data = perform_pacmap(data, n_components, n_neighbors)
 
                 st.session_state['reduced_data'] = reduced_data
-                st.success("Dimensionality reduction completed! The data is ready for visualization.")
-                st.session_state['page'] = "data_visualization"
+
+                # Jeśli istnieje kolumna 'target' w danych, użyj jej jako 'hue'
+                labels = None
+                if 'target' in st.session_state['data']:
+                    labels = st.session_state['data']['target']
+
+                plt.figure(figsize=(10, 6))
+                if labels is not None:
+                    sns.scatterplot(x=reduced_data[:, 0], y=reduced_data[:, 1], hue=labels, palette='tab10', s=50)
+                    plt.title("Dimensionality Reduction with Labels")
+                else:
+                    sns.scatterplot(x=reduced_data[:, 0], y=reduced_data[:, 1], s=50)
+                    plt.title("Dimensionality Reduction Visualization")
+
+                plt.xlabel("Dimension 1")
+                plt.ylabel("Dimension 2")
+                plt.grid(True)
+                st.pyplot(plt)
+
+                st.success("Dimensionality reduction and visualization completed!")
 
             except Exception as e:
                 st.error(f"Error performing dimensionality reduction: {e}")
@@ -133,11 +153,9 @@ def load_page2():
     else:
         st.error("Please load a dataset in the 'Select Dataset' tab first.")
 
-
 def load_page3():
     st.title("Page 3")
     st.write("This is the content of page 3.")
-
 
 def load_page4():
     st.title("Page 4")
