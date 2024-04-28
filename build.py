@@ -116,25 +116,17 @@ def load_page2():
 
                 if technique == "t-SNE":
                     reduced_data = perform_t_sne(data, n_components, perplexity, learning_rate, metric)
-                    st.session_state['reduced_data'] = reduced_data
-                    st.success("t-SNE completed!")
-
                 elif technique == "UMAP":
                     reduced_data = perform_umap(data, n_neighbors, min_dist)
-                    st.session_state['reduced_data'] = reduced_data
-                    st.success("UMAP completed!")
-
                 elif technique == "TRIMAP":
                     reduced_data = perform_trimap(data, n_neighbors)
-                    st.session_state['reduced_data'] = reduced_data
-                    st.success("TRIMAP completed!")
-
                 elif technique == "PaCMAP":
                     reduced_data = perform_pacmap(data, n_components, n_neighbors)
-                    st.session_state['reduced_data'] = reduced_data
-                    st.success("PaCMAP completed!")
 
+                st.session_state['reduced_data'] = reduced_data
+                st.success("Dimensionality reduction completed! The data is ready for visualization.")
                 st.session_state['page'] = "data_visualization"
+
             except Exception as e:
                 st.error(f"Error performing dimensionality reduction: {e}")
 
