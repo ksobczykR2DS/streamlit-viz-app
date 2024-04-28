@@ -94,25 +94,25 @@ def choose_technique_page():
             try:
                 if technique == "t-SNE":
                     data = st.session_state['data']['data']
-                    reduced_data = perform_t_sne(data, n_components, perplexity, learning_rate, metric)
+                    reduced_data = run_t_sne(data, n_components, perplexity, learning_rate, metric)
                     st.session_state['reduced_data'] = reduced_data
                     st.success("t-SNE completed!")
 
                 elif technique == "UMAP":
                     data = st.session_state['data']['data']
-                    reduced_data = perform_umap(data, n_neighbors, min_dist)
+                    reduced_data = run_umap(data, n_neighbors, min_dist)
                     st.session_state['reduced_data'] = reduced_data
                     st.success("UMAP completed!")
 
                 elif technique == "TRIMAP":
                     data = st.session_state['data']['data']
-                    reduced_data = perform_trimap(data, n_neighbors)
+                    reduced_data = run_trimap(data, n_neighbors)
                     st.session_state['reduced_data'] = reduced_data
                     st.success("TRIMAP completed!")
 
                 elif technique == "PaCMAP":
                     data = st.session_state['data']['data']
-                    reduced_data = perform_pacmap(data, n_components, n_neighbors)
+                    reduced_data = run_pacmap(data, n_components, n_neighbors)
                     st.session_state['reduced_data'] = reduced_data
                     st.success("PaCMAP completed!")
 
@@ -167,7 +167,7 @@ def experiments_page():
                 time.sleep(0.05)
                 progress_bar.progress((step + 1) / progress_steps * 100)
 
-                reduced_data = perform_t_sne(
+                reduced_data = run_t_sne(
                     st.session_state['data']['data'],
                     n_components,
                     perplexity,
@@ -201,7 +201,7 @@ def experiments_page():
                 time.sleep(0.05)
                 progress_bar.progress((step + 1) / progress_steps * 100)
 
-                reduced_data = perform_umap(
+                reduced_data = run_umap(
                     st.session_state['data']['data'],
                     n_neighbors,
                     min_dist
@@ -228,7 +228,7 @@ def experiments_page():
                 time.sleep(0.05)
                 progress_bar.progress((step + 1) / progress_steps * 100)
 
-                reduced_data = perform_trimap(
+                reduced_data = run_trimap(
                     st.session_state['data']['data'],
                     n_neighbors[0]
                 )
@@ -257,7 +257,7 @@ def experiments_page():
                 time.sleep(0.05)
                 progress_bar.progress((step + 1) / progress_steps * 100)
 
-                reduced_data = perform_pacmap(
+                reduced_data = run_pacmap(
                     st.session_state['data']['data'],
                     n_components,
                     n_neighbors
