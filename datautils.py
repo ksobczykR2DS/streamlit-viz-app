@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 import numpy as np
 from sklearn.manifold import TSNE
@@ -10,6 +11,8 @@ from umap.umap_ import UMAP
 import pacmap
 import seaborn as sns
 import matplotlib.pyplot as plt
+from torchvision import datasets as torch_datasets, transforms
+from torch.utils.data import DataLoader
 
 
 def create_synthetic_data(n_samples=300, n_features=50, n_clusters=3):
@@ -69,15 +72,28 @@ def handle_predefined_datasets(selected_dataset, sample_percentage):
     try:
         if selected_dataset == 'MNIST Handwritten Digits':
             dataset = load_mnist_dataset()
-        elif selected_dataset == '20 Newsgroups Text Data':
-            dataset = load_20_newsgroups_dataset()
         elif selected_dataset == 'Labeled Faces in the Wild (LFW)':
             dataset = load_lfw_dataset()
+        elif selected_dataset == 'CIFAR-100':
+            dataset = load_cifar100_dataset()
+        elif selected_dataset == 'Fashion-MNIST':
+            dataset = load_fashion_mnist_dataset()
+        elif selected_dataset == 'EMNIST':
+            dataset = load_emnist_dataset()
+        elif selected_dataset == 'KMNIST':
+            dataset = load_kmnist_dataset()
+        elif selected_dataset == 'Street View House Numbers (SVHN)':
+            dataset = load_svhn_dataset()
+        else:
+            st.error("Dataset not recognized. Please select a valid dataset.")
+            return
 
-        if hasattr(dataset, 'data'):
+        if isinstance(dataset, pd.DataFrame):
+            dataset_size = dataset.shape[0]
+        elif hasattr(dataset, 'data'):
             dataset_size = dataset.data.shape[0]
         else:
-            dataset_size = dataset.shape[0]
+            dataset_size = len(dataset)
 
         st.success(f"The full dataset contains {dataset_size} rows.")
         dataset_sampling(dataset, sample_percentage)
@@ -86,44 +102,188 @@ def handle_predefined_datasets(selected_dataset, sample_percentage):
 
 
 def dataset_sampling(dataset, sample_percentage):
-    if isinstance(dataset, np.ndarray):
-        dataset = pd.DataFrame(dataset)
+    try:
+        if isinstance(dataset, np.ndarray):
+            dataset = pd.DataFrame(dataset)
 
-    if hasattr(dataset, 'data'):
-        sampled_data = pd.DataFrame(dataset.data).sample(frac=sample_percentage / 100, random_state=42)
-        sampled_data['target'] = dataset.target.sample(frac=sample_percentage / 100, random_state=42).values
-    else:
-        sampled_data = dataset.sample(frac=sample_percentage / 100, random_state=42)
-        sampled_data = sampled_data.values
+        if hasattr(dataset, 'data'):
+            sampled_data = pd.DataFrame(dataset.data).sample(frac=sample_percentage / 100, random_state=42)
 
-    st.session_state['data'] = sampled_data
-    st.session_state['dataset_loaded'] = True
-    st.success(f"Sample loaded successfully! Sample size: {sampled_data.shape[0]} rows.")
+            if hasattr(dataset, 'target'):
+                sampled_data['target'] = dataset.target.sample(frac=sample_percentage / 100, random_state=42).values
+            else:
+                raise ValueError("MNIST dataset should have a 'target' column.")
+
+        else:
+            sampled_data = dataset.sample(frac=sample_percentage / 100, random_state=42)
+
+        if sampled_data.empty:
+            raise ValueError("Sampled data is empty.")
+
+        st.session_state['data'] = sampled_data
+        st.session_state['dataset_loaded'] = True
+        st.success(f"Sample loaded successfully! Sample size: {sampled_data.shape[0]} rows.")
+
+    except ValueError as ve:
+        st.error(f"Value error: {ve}")
+    except Exception as e:
+        st.error(f"Unexpected error: {e}")
 
 
 def load_mnist_dataset():
     st.write("Loading MNIST Handwritten Digits dataset...")
     st.write("It might take a few minutes...")
+
+    progress_bar = st.progress(0)
+
     data = fetch_openml(name='mnist_784', version=1)
+
+    for i in range(1, 101):
+        time.sleep(0.02)
+        progress_bar.progress(i)
+
+    progress_bar.empty()
+
     return data
-
-
-def load_20_newsgroups_dataset():
-    st.write("Loading 20 Newsgroups Text Data dataset...")
-    st.write("It might take a few minutes...")
-    data = fetch_20newsgroups(subset='all', return_X_y=True)
-    df = pd.DataFrame(data[0])
-    df['target'] = data[1]
-    return df
 
 
 def load_lfw_dataset():
     st.write("Loading Labeled Faces in the Wild (LFW) dataset...")
     st.write("It might take a few minutes...")
+
+    progress_bar = st.progress(0)
+
     data = datasets.fetch_lfw_people(min_faces_per_person=70, resize=0.4)
+
+    for i in range(1, 101):
+        time.sleep(0.02)
+        progress_bar.progress(i)
+
     num_samples, num_features = data.data.shape
     feature_names = [f"feature_{i}" for i in range(num_features)]
+
     df = pd.DataFrame(data.data, columns=feature_names)
+    progress_bar.empty()
+    return df
+
+# Funkcja do ładowania CIFAR-100
+def load_cifar100_dataset():
+    st.write("Loading CIFAR-100 dataset...")
+    st.write("It might take a few minutes...")
+
+    progress_bar = st.progress(0)
+
+    transform = transforms.Compose([transforms.ToTensor()])
+    dataset = torch_datasets.CIFAR100(root='./data', train=True, download=True, transform=transform)
+
+    for i in range(1, 101, 10):
+        time.sleep(0.05)
+        progress_bar.progress(i)
+
+    dataloader = DataLoader(dataset, batch_size=len(dataset))
+    data = next(iter(dataloader))
+    df = pd.DataFrame(data[0].view(len(dataset), -1).numpy())
+    df['target'] = data[1].numpy()
+
+    progress_bar.empty()
+
+    return df
+
+
+# Funkcja do ładowania Fashion-MNIST
+def load_fashion_mnist_dataset():
+    st.write("Loading Fashion-MNIST dataset...")
+    st.write("It might take a few minutes...")
+
+    progress_bar = st.progress(0)
+
+    transform = transforms.Compose([transforms.ToTensor()])
+    dataset = torch_datasets.FashionMNIST(root='./data', train=True, download=True, transform=transform)
+
+    for i in range(1, 101, 10):
+        time.sleep(0.05)
+        progress_bar.progress(i)
+
+    dataloader = DataLoader(dataset, batch_size=len(dataset))
+    data = next(iter(dataloader))
+    df = pd.DataFrame(data[0].view(len(dataset), -1).numpy())
+    df['target'] = data[1].numpy()
+
+    progress_bar.empty()
+
+    return df
+
+
+# Funkcja do ładowania EMNIST
+def load_emnist_dataset():
+    st.write("Loading EMNIST dataset...")
+    st.write("It might take a few minutes...")
+
+    progress_bar = st.progress(0)
+
+    transform = transforms.Compose([transforms.ToTensor()])
+    dataset = torch_datasets.EMNIST(root='./data', split='balanced', train=True, download=True, transform=transform)
+
+    for i in range(1, 101, 10):
+        time.sleep(0.05)
+        progress_bar.progress(i)
+
+    dataloader = DataLoader(dataset, batch_size=len(dataset))
+    data = next(iter(dataloader))
+    df = pd.DataFrame(data[0].view(len(dataset), -1).numpy())
+    df['target'] = data[1].numpy()
+
+    progress_bar.empty()
+
+    return df
+
+
+# Funkcja do ładowania KMNIST
+def load_kmnist_dataset():
+    st.write("Loading KMNIST dataset...")
+    st.write("It might take a few minutes...")
+
+    progress_bar = st.progress(0)
+
+    transform = transforms.Compose([transforms.ToTensor()])
+    dataset = torch_datasets.KMNIST(root='./data', train=True, download=True, transform=transform)
+
+    for i in range(1, 101, 10):
+        time.sleep(0.05)
+        progress_bar.progress(i)
+
+    dataloader = DataLoader(dataset, batch_size=len(dataset))
+    data = next(iter(dataloader))
+    df = pd.DataFrame(data[0].view(len(dataset), -1).numpy())
+    df['target'] = data[1].numpy()
+
+    progress_bar.empty()
+
+    return df
+
+
+
+
+def load_svhn_dataset():
+    st.write("Loading Street View House Numbers (SVHN) dataset...")
+    st.write("It might take a few minutes...")
+
+    progress_bar = st.progress(0)
+
+    transform = transforms.Compose([transforms.ToTensor()])
+    dataset = torch_datasets.SVHN(root='./data', split='train', download=True, transform=transform)
+
+    for i in range(1, 101, 10):
+        time.sleep(0.05)
+        progress_bar.progress(i)
+
+    dataloader = DataLoader(dataset, batch_size=len(dataset))
+    data = next(iter(dataloader))
+    df = pd.DataFrame(data[0].view(len(dataset), -1).numpy())
+    df['target'] = data[1].numpy()
+
+    progress_bar.empty()
+
     return df
 
 
@@ -191,11 +351,29 @@ def run_umap(dataset, n_neighbors, min_dist, metric):
 
 def run_trimap(dataset, n_inliers, n_outliers, n_random, weight_adj, n_iters):
     try:
-        trimap_transformer = trimap.TRIMAP(n_inliers=n_inliers, n_outliers=n_outliers,
-                                           n_random=n_random, weight_adj=weight_adj, n_iters=n_iters)
-        return trimap_transformer.fit_transform(dataset)
+        if isinstance(dataset, str):
+            raise AttributeError("Data is a string. Cannot proceed with TRIMAP.")
+
+        if isinstance(dataset, pd.DataFrame):
+            dataset.columns = dataset.columns.astype(str)
+
+        trimap_transformer = trimap.TRIMAP(
+            n_inliers=n_inliers,
+            n_outliers=n_outliers,
+            n_random=n_random,
+            weight_adj=weight_adj,
+            n_iters=n_iters
+        )
+        result = trimap_transformer.fit_transform(dataset)
+
+        return result
+
+    except AttributeError as ae:
+        st.error(f"AttributeError: {ae}")
+    except ValueError as ve:
+        st.error(f"ValueError: {ve}")
     except Exception as e:
-        return f"Error performing TRIMAP: {e}"
+        st.error(f"Unexpected error: {e}")
 
 
 def run_pacmap(dataset, n_neighbors, mn_ratio, fp_ratio):
@@ -212,8 +390,13 @@ def visualize_results(results):
         return
 
     for technique, data in results.items():
-        if data is None or data.size == 0:
-            st.error(f"Data for {technique} is empty or null.")
+        # Obsługa błędu związana z 'size'
+        if isinstance(data, str):
+            st.error("Data is a string. Cannot use 'size' attribute.")
+            continue
+
+        if data is None or not hasattr(data, 'size') or data.size == 0:
+            st.error(f"Data for {technique} is empty or invalid.")
             continue
 
         if len(data.shape) != 2:
@@ -221,51 +404,53 @@ def visualize_results(results):
             continue
 
         plt.figure(figsize=(10, 6))
-        try:
-            hue = st.session_state['data']['target'] if 'target' in st.session_state['data'] else None
+
+        if 'data' not in st.session_state or 'target' not in st.session_state['data']:
+            st.warning("No 'target' column found. Visualization will be monochrome.")
+            sns.scatterplot(x=data[:, 0], y=data[:, 1], s=50)
+        else:
+            hue = st.session_state['data']['target']
             sns.scatterplot(x=data[:, 0], y=data[:, 1], hue=hue, palette='tab10', s=50)
-            plt.title(f"{technique} Visualization")
-            plt.xlabel("Dimension 1")
-            plt.ylabel("Dimension 2")
-            plt.grid(True)
-            st.pyplot(plt)
-        except ValueError as ve:
-            st.error(f"Value error during visualization: {ve}")
-        except Exception as e:
-            st.error(f"Unexpected error during visualization: {e}")
+
+        plt.title(f"{technique} Visualization")
+        plt.xlabel("Dimension 1")
+        plt.ylabel("Dimension 2")
+        plt.grid(True)
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        st.pyplot(plt)
 
 
-# def perform_t_sne(dataset, n_components, perplexity, learning_rate, metric):
-#     """Perform t-SNE with specified parameters."""
-#     try:
-#         tsne = TSNE(n_components=n_components, perplexity=perplexity, learning_rate=learning_rate, metric=metric)
-#         return tsne.fit_transform(dataset)
-#     except Exception as e:
-#         return f"Error performing t-SNE: {e}"
-#
-#
-# def perform_umap(dataset, n_neighbors=15, min_dist=0.1):
-#     """Perform UMAP with specified parameters."""
-#     try:
-#         umap_model = UMAP(n_neighbors=n_neighbors, min_dist=min_dist, n_components=2)
-#         return umap_model.fit_transform(dataset)
-#     except Exception as e:
-#         return f"Error performing UMAP: {e}"
-#
-#
-# def perform_trimap(dataset, n_neighbors=15):
-#     """Perform TRIMAP with specified parameters."""
-#     try:
-#         trimap_model = trimap.TRIMAP(n_inliers=n_neighbors)
-#         return trimap_model.fit_transform(dataset)
-#     except Exception as e:
-#         return f"Error performing TRIMAP: {e}"
-#
-#
-# def perform_pacmap(dataset, n_components=2, n_neighbors=15):
-#     """Perform PaCMAP with specified parameters."""
-#     try:
-#         pac_map = pacmap.PaCMAP(n_components=n_components, n_neighbors=n_neighbors)
-#         return pac_map.fit_transform(dataset)
-#     except Exception as e:
-#         return f"Error performing PaCMAP: {e}"
+def perform_t_sne(dataset, n_components, perplexity, learning_rate, metric):
+    """Perform t-SNE with specified parameters."""
+    try:
+        tsne = TSNE(n_components=n_components, perplexity=perplexity, learning_rate=learning_rate, metric=metric)
+        return tsne.fit_transform(dataset)
+    except Exception as e:
+        return f"Error performing t-SNE: {e}"
+
+
+def perform_umap(dataset, n_neighbors=15, min_dist=0.1):
+    """Perform UMAP with specified parameters."""
+    try:
+        umap_model = UMAP(n_neighbors=n_neighbors, min_dist=min_dist, n_components=2)
+        return umap_model.fit_transform(dataset)
+    except Exception as e:
+        return f"Error performing UMAP: {e}"
+
+
+def perform_trimap(dataset, n_neighbors=15):
+    """Perform TRIMAP with specified parameters."""
+    try:
+        trimap_model = trimap.TRIMAP(n_inliers=n_neighbors)
+        return trimap_model.fit_transform(dataset)
+    except Exception as e:
+        return f"Error performing TRIMAP: {e}"
+
+
+def perform_pacmap(dataset, n_components=2, n_neighbors=15):
+    """Perform PaCMAP with specified parameters."""
+    try:
+        pac_map = pacmap.PaCMAP(n_components=n_components, n_neighbors=n_neighbors)
+        return pac_map.fit_transform(dataset)
+    except Exception as e:
+        return f"Error performing PaCMAP: {e}"
