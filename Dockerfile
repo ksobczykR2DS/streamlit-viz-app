@@ -15,7 +15,7 @@ COPY . /app
 # Set the working directory in the Docker image
 WORKDIR /app
 
-# Install any needed packages specified in requirements.txt
+# Install any needed packages specified in kasias_requirements.txt
 RUN pip install -r requirements.txt
 
 # Make port 8502 available to the world outside this container
