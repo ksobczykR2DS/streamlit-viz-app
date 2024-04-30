@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.manifold import TSNE
 import os
 import streamlit as st
-from sklearn.datasets import fetch_openml, fetch_20newsgroups
+from sklearn.datasets import fetch_openml
 from sklearn import datasets
 import trimap
 from umap.umap_ import UMAP
@@ -260,8 +260,6 @@ def load_kmnist_dataset():
     progress_bar.empty()
 
     return df
-
-
 
 
 def load_svhn_dataset():
