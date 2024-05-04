@@ -13,6 +13,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from torchvision import datasets as torch_datasets, transforms
 from torch.utils.data import DataLoader
+import streamlit_ext as ste
 
 
 def create_synthetic_data(n_samples=300, n_features=50, n_clusters=3):
@@ -416,6 +417,17 @@ def visualize_results(results):
         plt.grid(True)
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         st.pyplot(plt)
+
+        plot_path = f"{str(technique)}.png"
+        plt.savefig(plot_path)
+
+        with open(plot_path, "rb") as file:
+            btn = ste.download_button(
+                label="Download image",
+                data=file,
+                file_name=plot_path,
+                mime="image/png"
+            )
 
 
 def perform_t_sne(dataset, n_components, perplexity, learning_rate, metric):

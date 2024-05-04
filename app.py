@@ -11,7 +11,6 @@ def load_page1():
         Interactive app designed for advanced data visualization using techniques like t-SNE, UMAP, TRIMAP, and PaCMAP.
         It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
     """)
-
     dataset_names = [
         'MNIST Handwritten Digits',
         'Labeled Faces in the Wild (LFW)',
