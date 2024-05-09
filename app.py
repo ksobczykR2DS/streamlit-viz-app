@@ -1,7 +1,8 @@
 from datautils import *
 import streamlit as st
-from run_experiments import compute_cf_nn, compute_cf, perform_experiments
 
+from run_experiments import compute_cf_nn, compute_cf, perform_experiments
+from model_utils import create_model, get_embeddings, reduce_dimensions, visualize_embeddings, preprocess_data
 
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
 
@@ -183,21 +184,17 @@ def load_page3():
             st.write("Running experiments...")
             try:
                 results = perform_experiments(dataset, labels, selected_technique, n_iter)
-                st.write("Experiments completed successfully.")
-
-                for result in results:
-                    if result['Model'] == selected_technique:
+                if results:
+                    st.write("Experiments completed successfully.")
+                    for result in results:
                         st.subheader(f"Results for {result['Model']}:")
                         st.write(f"Best CF Score: {result['Score']:.4f}")
                         st.write("Best Parameters:")
                         for param, value in result.items():
                             if param not in ['Model', 'Score']:
                                 st.write(f"{param}: {value}")
-
-                        best_model = result['estimator']
-                        x_transformed = best_model.transform(dataset)
-                        visualize_individual_result(selected_technique, x_transformed)
-
+                else:
+                    st.write("No results to display.")
             except Exception as e:
                 st.error(f"An error occurred while running experiments: {str(e)}")
         else:
@@ -205,7 +202,22 @@ def load_page3():
 
 
 def load_page4():
-    raise NotImplementedError
+    st.title("3D Embedding Visualization")
+
+    data = st.session_state.get('data', None)
+    labels = st.session_state.get('labels', None)
+    if data is not None and labels is not None:
+        input_shape = data.shape[1] if isinstance(data, pd.DataFrame) else np.array(data).shape[1]
+        model = create_model(input_shape)
+
+        if st.button('Generate Embeddings and Visualize'):
+            embeddings = get_embeddings(model, data)
+            if embeddings is not None:
+                reduced_embeddings = reduce_dimensions(embeddings)
+                visualize_embeddings(reduced_embeddings, labels)
+
+    else:
+        st.warning("No data or labels available. Please load data and labels into session state before proceeding.")
 
 
 def select_page(page_name):
