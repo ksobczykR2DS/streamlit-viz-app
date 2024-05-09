@@ -27,8 +27,7 @@ def handle_uploaded_file(uploaded_file, sample_percentage):
     df = pd.read_csv(uploaded_file)
     df.rename(columns={df.columns[-1]: 'target'}, inplace=True)
 
-    sampled_df = df.sample(frac=sample_percentage / 100, random_state=42)
-
+    sampled_df = df.sample(frac=sample_percentage / 100, random_state=42).reset_index(drop=True)
     sampled_data = sampled_df.iloc[:, :-1]
     sampled_labels = sampled_df.iloc[:, -1]
 
@@ -36,6 +35,29 @@ def handle_uploaded_file(uploaded_file, sample_percentage):
     st.session_state['labels'] = sampled_labels
     st.session_state['dataset_loaded'] = True
     st.success(f"Dataset loaded and validated successfully! Sampled data contains {sampled_data.shape[0]} rows and {sampled_data.shape[1]} columns.")
+
+
+def dataset_sampling(dataset, sample_percentage):
+    try:
+        if isinstance(dataset, np.ndarray):
+            dataset = pd.DataFrame(dataset)
+        elif hasattr(dataset, 'data') and hasattr(dataset, 'target'):
+            dataset = pd.DataFrame(dataset.data, columns=[f"feature_{i}" for i in range(dataset.data.shape[1])])
+            dataset['target'] = dataset.target
+        if not isinstance(dataset, pd.DataFrame) or dataset.empty:
+            raise ValueError("Dataset format is not supported or empty.")
+
+        sampled_df = dataset.sample(frac=sample_percentage / 100, random_state=42).reset_index(drop=True)
+
+        st.session_state['data'] = sampled_df.iloc[:, :-1]
+        st.session_state['labels'] = sampled_df.iloc[:, -1]
+        st.session_state['dataset_loaded'] = True
+        st.success(f"Sample loaded successfully! Sample size: {sampled_df.shape[0]} rows.")
+
+    except ValueError as ve:
+        st.error(f"Value error: {ve}")
+    except Exception as e:
+        st.error(f"Unexpected error: {e}")
 
 
 def handle_predefined_datasets(selected_dataset, sample_percentage):
@@ -71,36 +93,6 @@ def handle_predefined_datasets(selected_dataset, sample_percentage):
         st.error(f"Error loading dataset: {e}")
 
 
-def dataset_sampling(dataset, sample_percentage):
-    try:
-        if isinstance(dataset, np.ndarray):
-            dataset = pd.DataFrame(dataset)
-
-        if hasattr(dataset, 'data') and hasattr(dataset, 'target'):
-            full_data = pd.DataFrame(dataset.data)
-            full_data['target'] = dataset.target
-            sampled_data = full_data.sample(frac=sample_percentage / 100, random_state=42)
-
-        elif isinstance(dataset, pd.DataFrame):
-            sampled_data = dataset.sample(frac=sample_percentage / 100, random_state=42)
-        else:
-            raise ValueError("Dataset format is not supported.")
-
-        if sampled_data.empty:
-            raise ValueError("Sampled data is empty.")
-
-        st.session_state['data'] = sampled_data.iloc[:, :-1]
-        st.session_state['labels'] = sampled_data.iloc[:, -1]
-        st.session_state['dataset_loaded'] = True
-        st.success(f"Sample loaded successfully! Sample size: {sampled_data.shape[0]} rows.")
-
-    except ValueError as ve:
-        st.error(f"Value error: {ve}")
-    except Exception as e:
-        st.error(f"Unexpected error: {e}")
-
-
-# Funkcje redukcji wymiarów
 def convert_dataset(dataset):
     if isinstance(dataset, pd.DataFrame):
         return dataset.values

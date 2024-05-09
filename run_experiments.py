@@ -20,8 +20,8 @@ def compute_cf_nn(data_2d, labels, nn_max=100):
 
     cf_nn_values = []
     for i in range(len(data_2d)):
-        label = labels[i]
-        neighbors_labels = labels[indices[i]]
+        label = labels.iloc[i]
+        neighbors_labels = labels.iloc[indices[i].tolist()] # Convert array to list for proper indexing
         cf_nn = np.sum(neighbors_labels == label) / nn_max
         cf_nn_values.append(cf_nn)
 
