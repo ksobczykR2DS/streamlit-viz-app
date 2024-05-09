@@ -11,7 +11,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from torchvision import datasets as torch_datasets, transforms
 from torch.utils.data import DataLoader
-import streamlit_ext as ste
 from pacmap import PaCMAP
 
 
@@ -27,11 +26,15 @@ def validate_and_separate_data(df):
 def handle_uploaded_file(uploaded_file, sample_percentage):
     df = pd.read_csv(uploaded_file)
     df.rename(columns={df.columns[-1]: 'target'}, inplace=True)
-    data, labels = validate_and_separate_data(df)
-    sampled_data = data.sample(frac=sample_percentage / 100, random_state=42)
-    sampled_labels = labels.sample(frac=sample_percentage / 100, random_state=42)
+
+    sampled_df = df.sample(frac=sample_percentage / 100, random_state=42)
+
+    sampled_data = sampled_df.iloc[:, :-1]
+    sampled_labels = sampled_df.iloc[:, -1]
+
     st.session_state['data'] = sampled_data
     st.session_state['labels'] = sampled_labels
+    st.session_state['dataset_loaded'] = True
     st.success(f"Dataset loaded and validated successfully! Sampled data contains {sampled_data.shape[0]} rows and {sampled_data.shape[1]} columns.")
 
 
@@ -215,6 +218,7 @@ def visualize_individual_result(technique, data):
             file_name=plot_path,
             mime="image/png"
         )
+
 
 def load_mnist_dataset():
     st.write("Loading MNIST Handwritten Digits dataset...")

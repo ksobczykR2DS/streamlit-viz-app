@@ -1,6 +1,6 @@
 from datautils import *
 import streamlit as st
-from run_experiments import compute_cf_nn, compute_cf
+from run_experiments import compute_cf_nn, compute_cf, perform_experiments
 
 
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
@@ -45,7 +45,7 @@ def load_page1():
 
 
 def load_page2():
-    if 'data' not in st.session_state or st.session_state['data'].empty:
+    if 'data' not in st.session_state:
         st.error("No dataset loaded or dataset is empty. Please load a dataset first.")
         return
 
@@ -103,18 +103,20 @@ def load_page2():
 
         if use_pacmap:
             st.subheader("PaCMAP Parameters")
+            techniques.append('PaCMAP')
             params['pacmap'] = {
                 "n_neighbors": st.slider("Number of Neighbors (PaCMAP)", 10, 200, 15),
                 "mn_ratio": st.slider("MN Ratio", 0.1, 1.0, 0.5, 0.1),
                 "fp_ratio": st.slider("FP Ratio", 1.0, 5.0, 2.0, 0.1)
             }
-            techniques.append('PacMAP')
+            st.write("PaCMAP is selected")
 
         if st.button("Confirm and Run Techniques"):
             results = {}
             cf_scores = {}
+            st.write(f"Selected Techniques: {techniques}")
             for technique in techniques:
-                st.write(f"Processing: {technique}")  # Debug output
+                st.write(f"Processing: {technique}")
 
                 if technique == 't-SNE':
                     result = run_t_sne(dataset, **params['t_sne'])
@@ -151,6 +153,7 @@ def load_page2():
                         cf_nn_values = compute_cf_nn(result, labels)
                         cf_scores['PaCMAP'] = compute_cf(cf_nn_values)
                         st.write(f"PaCMAP CF Score: {cf_scores['PaCMAP']:.4f}")
+
             st.session_state['reduced_data'] = results
             st.success("Selected techniques executed successfully.")
 
@@ -160,7 +163,45 @@ def load_page2():
 
 def load_page3():
     st.title("Experiments")
-    st.write("This is the content of page")
+    st.write("Run experiments to optimize dimensionality reduction techniques based on the CF score and visualize the results.")
+
+    if 'data' not in st.session_state:
+        st.error("Please load your dataset first.")
+        return
+
+    dataset = st.session_state.get('data', None)
+    labels = st.session_state.get('labels', None)
+
+    techniques_list = ['t-SNE', 'UMAP', 'TRIMAP', 'PaCMAP']
+    selected_technique = st.selectbox('Select a technique to include in the experiments:', techniques_list)
+
+    # Number of iterations for the BayesSearchCV
+    n_iter = st.slider("Select number of iterations for optimization:", min_value=10, max_value=100, value=50, step=10)
+
+    if st.button('Run Experiments'):
+        if selected_technique:
+            st.write("Running experiments...")
+            try:
+                results = perform_experiments(dataset, labels, selected_technique, n_iter)
+                st.write("Experiments completed successfully.")
+
+                for result in results:
+                    if result['Model'] == selected_technique:
+                        st.subheader(f"Results for {result['Model']}:")
+                        st.write(f"Best CF Score: {result['Score']:.4f}")
+                        st.write("Best Parameters:")
+                        for param, value in result.items():
+                            if param not in ['Model', 'Score']:
+                                st.write(f"{param}: {value}")
+
+                        best_model = result['estimator']
+                        x_transformed = best_model.transform(dataset)
+                        visualize_individual_result(selected_technique, x_transformed)
+
+            except Exception as e:
+                st.error(f"An error occurred while running experiments: {str(e)}")
+        else:
+            st.error("Please select a technique to run experiments.")
 
 
 def load_page4():

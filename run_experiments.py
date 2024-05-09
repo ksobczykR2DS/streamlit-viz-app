@@ -70,18 +70,13 @@ techniques_params = {
 
 # W teorii ten kod powinien przyjmować dataset, sam wyciągać sobie label, a następnie zależy, jaka lista do niego
 # przeprowadzać eksperymenty w ilości 'n_iter' przy maksymalizacji metryki 'cf' (ale to tylko teoria)
-def thq_experiments(dataset, technique_names_list, n_iter):
+def perform_experiments(dataset, labels, technique_names_list, n_iter):
     print('Loading techniques...')
     model_dict = {}
     results = []
 
-    # Wyodrębnianie etykiet (zakładając, że ostatnia kolumna zawiera etykiety)
-    data = dataset[:, :-1]
-    labels = dataset[:, -1]
-
-    x_train, x_test, y_train, y_test, labels_train, labels_test = train_test_split(data, labels, test_size=0.2,
+    x_train, x_test, y_train, y_test, labels_train, labels_test = train_test_split(dataset, labels, test_size=0.2,
                                                                                    random_state=42)
-
     try:
         for technique_name in technique_names_list.split(','):
             assert technique_name in techniques_dict.keys(), f'Unknown technique name: {technique_name}'
