@@ -2,24 +2,17 @@ import time
 import pandas as pd
 import numpy as np
 from sklearn.manifold import TSNE
-import os
 import streamlit as st
 from sklearn.datasets import fetch_openml
 from sklearn import datasets
 import trimap
 from umap.umap_ import UMAP
-import pacmap
 import seaborn as sns
 import matplotlib.pyplot as plt
 from torchvision import datasets as torch_datasets, transforms
 from torch.utils.data import DataLoader
 import streamlit_ext as ste
-from sklearn.datasets import make_classification
-
-
-def create_synthetic_data(n_samples, n_features, n_clusters):
-    data, labels = make_classification(n_samples=n_samples, n_features=n_features, n_classes=n_clusters)
-    return data, labels
+from pacmap import PaCMAP
 
 
 # Ostatnia kolumna musi być targetem, dane tylko numeryczne prócz ostatniej kolumny
@@ -33,18 +26,13 @@ def validate_and_separate_data(df):
 
 def handle_uploaded_file(uploaded_file, sample_percentage):
     df = pd.read_csv(uploaded_file)
+    df.rename(columns={df.columns[-1]: 'target'}, inplace=True)
     data, labels = validate_and_separate_data(df)
     sampled_data = data.sample(frac=sample_percentage / 100, random_state=42)
+    sampled_labels = labels.sample(frac=sample_percentage / 100, random_state=42)
     st.session_state['data'] = sampled_data
-    st.session_state['labels'] = labels
-    st.success("Dataset loaded and validated successfully!")
-
-    if st.button("Generate Synthetic Data", key="load_synthetic_dataset"):
-        data, labels = create_synthetic_data(n_samples=1000, n_features=50, n_clusters=3)
-        sampled_data, sampled_labels = data.sample(frac=sample_percentage / 100, random_state=42), labels
-        st.session_state['data'] = sampled_data
-        st.session_state['labels'] = sampled_labels
-        st.success("Synthetic data generated and loaded successfully!")
+    st.session_state['labels'] = sampled_labels
+    st.success(f"Dataset loaded and validated successfully! Sampled data contains {sampled_data.shape[0]} rows and {sampled_data.shape[1]} columns.")
 
 
 def handle_predefined_datasets(selected_dataset, sample_percentage):
@@ -109,6 +97,131 @@ def dataset_sampling(dataset, sample_percentage):
         st.error(f"Unexpected error: {e}")
 
 
+# Funkcje redukcji wymiarów
+def convert_dataset(dataset):
+    if isinstance(dataset, pd.DataFrame):
+        return dataset.values
+    elif not isinstance(dataset, np.ndarray):
+        raise ValueError("Dataset must be either a pandas DataFrame or a numpy array.")
+    return dataset
+
+
+def run_t_sne(dataset, **params):
+    dataset = convert_dataset(dataset)
+
+    if dataset.ndim != 2:
+        raise ValueError("Dataset must be a 2D array.")
+
+    tsne = TSNE(**params)
+    result = tsne.fit_transform(dataset)
+
+    if result is None or result.size == 0:
+        raise ValueError("t-SNE result is empty.")
+
+    return result
+
+
+def run_umap(dataset, n_neighbors, min_dist, metric):
+    dataset = convert_dataset(dataset)
+
+    if dataset.ndim != 2:
+        raise ValueError("Dataset must be a 2D array.")
+
+    try:
+        umap = UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric=metric)
+        result = umap.fit_transform(dataset)
+
+        if result is None or result.size == 0:
+            raise ValueError("UMAP result is empty.")
+
+        return result
+
+    except Exception as e:
+        st.error(f"Error performing UMAP: {e}")
+        return None
+
+
+def run_trimap(dataset, n_inliers, n_outliers, n_random, weight_adj, n_iters):
+    dataset = convert_dataset(dataset)
+
+    if dataset.ndim != 2:
+        raise ValueError("Dataset must be a 2D array.")
+
+    trimap_transformer = trimap.TRIMAP(
+        n_inliers=n_inliers,
+        n_outliers=n_outliers,
+        n_random=n_random,
+        # weight_adj wyrzuca błąd, propozycja zamiany na weight_temp (do sprawdzenia)
+        weight_adj=weight_adj,
+        n_iters=n_iters
+    )
+    result = trimap_transformer.fit_transform(dataset)
+
+    if result is None or result.size == 0:
+        raise ValueError("TRIMAP result is empty.")
+
+    return result
+
+
+def run_pacmap(dataset, n_neighbors, mn_ratio, fp_ratio):
+    dataset = convert_dataset(dataset)
+
+    if dataset.ndim != 2:
+        raise ValueError("Dataset must be a 2D array.")
+
+    try:
+        pacmap_instance = PaCMAP(n_neighbors=n_neighbors, MN_ratio=mn_ratio, FP_ratio=fp_ratio)
+        result = pacmap_instance.fit_transform(dataset)
+
+        if result is None or result.size == 0:
+            raise ValueError("PaCMAP result is empty.")
+
+        return result
+
+    except Exception as e:
+        st.error(f"Unexpected error during PaCMAP: {e}")
+        return None
+
+
+def visualize_results(results):
+    if not results:
+        st.error("No results to visualize.")
+        return
+
+    for technique, data in results.items():
+        if isinstance(data, str) or data is None or not hasattr(data, 'size') or data.size == 0:
+            st.error(f"Data for {technique} is empty or invalid.")
+            continue
+
+        if len(data.shape) != 2:
+            st.error(f"Data for {technique} must be a 2D array.")
+            continue
+
+        plt.figure(figsize=(10, 6))
+        if 'labels' in st.session_state:
+            sns.scatterplot(x=data[:, 0], y=data[:, 1], hue=st.session_state['labels'], palette='tab10', s=50)
+        else:
+            st.warning("No labels found. Visualization will be monochrome.")
+            sns.scatterplot(x=data[:, 0], y=data[:, 1], s=50)
+
+        plt.title(f"{technique} Visualization")
+        plt.xlabel("Dimension 1")
+        plt.ylabel("Dimension 2")
+        plt.grid(True)
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        st.pyplot(plt)
+
+        plot_path = f"{technique}.png"
+        plt.savefig(plot_path)
+        with open(plot_path, "rb") as file:
+            btn = ste.download_button(
+                label="Download image",
+                data=file,
+                file_name=plot_path,
+                mime="image/png"
+            )
+
+
 def load_mnist_dataset():
     st.write("Loading MNIST Handwritten Digits dataset...")
     st.write("It might take a few minutes...")
@@ -144,6 +257,7 @@ def load_lfw_dataset():
     df = pd.DataFrame(data.data, columns=feature_names)
     progress_bar.empty()
     return df
+
 
 # Funkcja do ładowania CIFAR-100
 def load_cifar100_dataset():
@@ -262,150 +376,3 @@ def load_svhn_dataset():
     progress_bar.empty()
 
     return df
-
-
-# Funkcje redukcji wymiarów
-def run_t_sne(dataset, **params):
-    if not isinstance(dataset, np.ndarray):
-        if isinstance(dataset, pd.DataFrame):
-            dataset = dataset.to_numpy()
-        else:
-            raise ValueError("Dataset must be a numpy array.")
-
-    if dataset.ndim != 2:
-        raise ValueError("Dataset must be a 2D array.")
-
-    try:
-        tsne = TSNE(n_components=2, **params)
-        result = tsne.fit_transform(dataset)
-
-        if result is None or result.size == 0:
-            raise ValueError("t-SNE result is empty.")
-
-        return result
-
-    except ValueError as ve:
-        print("Value error during t-SNE:", ve)
-        return None
-
-    except Exception as e:
-        print("Unexpected error during t-SNE:", e)
-        return None
-
-
-def run_umap(dataset, n_neighbors, min_dist, metric):
-    try:
-        umap = UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric=metric)
-        return umap.fit_transform(dataset)
-    except Exception as e:
-        return f"Error performing UMAP: {e}"
-
-
-def run_trimap(dataset, n_inliers, n_outliers, n_random, weight_adj, n_iters):
-    try:
-        if isinstance(dataset, str):
-            raise AttributeError("Data is a string. Cannot proceed with TRIMAP.")
-
-        if isinstance(dataset, pd.DataFrame):
-            dataset.columns = dataset.columns.astype(str)
-
-        trimap_transformer = trimap.TRIMAP(
-            n_inliers=n_inliers,
-            n_outliers=n_outliers,
-            n_random=n_random,
-            weight_adj=weight_adj,
-            n_iters=n_iters
-        )
-        result = trimap_transformer.fit_transform(dataset)
-
-        return result
-
-    except AttributeError as ae:
-        st.error(f"AttributeError: {ae}")
-    except ValueError as ve:
-        st.error(f"ValueError: {ve}")
-    except Exception as e:
-        st.error(f"Unexpected error: {e}")
-
-
-def visualize_results(results):
-    if not results:
-        st.error("No results to visualize.")
-        return
-
-    for technique, data in results.items():
-        # Obsługa błędu związana z 'size'
-        if isinstance(data, str):
-            st.error("Data is a string. Cannot use 'size' attribute.")
-            continue
-
-        if data is None or not hasattr(data, 'size') or data.size == 0:
-            st.error(f"Data for {technique} is empty or invalid.")
-            continue
-
-        if len(data.shape) != 2:
-            st.error(f"Data for {technique} must be a 2D array.")
-            continue
-
-        plt.figure(figsize=(10, 6))
-
-        if 'data' not in st.session_state or 'target' not in st.session_state['data']:
-            st.warning("No 'target' column found. Visualization will be monochrome.")
-            sns.scatterplot(x=data[:, 0], y=data[:, 1], s=50)
-        else:
-            hue = st.session_state['data']['target']
-            sns.scatterplot(x=data[:, 0], y=data[:, 1], hue=hue, palette='tab10', s=50)
-
-        plt.title(f"{technique} Visualization")
-        plt.xlabel("Dimension 1")
-        plt.ylabel("Dimension 2")
-        plt.grid(True)
-        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        st.pyplot(plt)
-
-        plot_path = f"{str(technique)}.png"
-        plt.savefig(plot_path)
-
-        with open(plot_path, "rb") as file:
-            btn = ste.download_button(
-                label="Download image",
-                data=file,
-                file_name=plot_path,
-                mime="image/png"
-            )
-
-
-def perform_t_sne(dataset, n_components, perplexity, learning_rate, metric):
-    """Perform t-SNE with specified parameters."""
-    try:
-        tsne = TSNE(n_components=n_components, perplexity=perplexity, learning_rate=learning_rate, metric=metric)
-        return tsne.fit_transform(dataset)
-    except Exception as e:
-        return f"Error performing t-SNE: {e}"
-
-
-def perform_umap(dataset, n_neighbors=15, min_dist=0.1):
-    """Perform UMAP with specified parameters."""
-    try:
-        umap_model = UMAP(n_neighbors=n_neighbors, min_dist=min_dist, n_components=2)
-        return umap_model.fit_transform(dataset)
-    except Exception as e:
-        return f"Error performing UMAP: {e}"
-
-
-def perform_trimap(dataset, n_neighbors=15):
-    """Perform TRIMAP with specified parameters."""
-    try:
-        trimap_model = trimap.TRIMAP(n_inliers=n_neighbors)
-        return trimap_model.fit_transform(dataset)
-    except Exception as e:
-        return f"Error performing TRIMAP: {e}"
-
-
-def perform_pacmap(dataset, n_components=2, n_neighbors=15):
-    """Perform PaCMAP with specified parameters."""
-    try:
-        pac_map = pacmap.PaCMAP(n_components=n_components, n_neighbors=n_neighbors)
-        return pac_map.fit_transform(dataset)
-    except Exception as e:
-        return f"Error performing PaCMAP: {e}"

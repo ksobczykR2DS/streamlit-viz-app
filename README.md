@@ -1,18 +1,19 @@
-# streamlit-viz-tool
-Interactive app designed for advanced data visualization using techniques like t-SNE, UMAP, TRIMAP, and PaCMAP. It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
-
 # TODO, Dokumentacja
 
 **Wszystko po angielsku**
 
 # Opis projektu, zawartość
---- 
+Interactive app designed for advanced data visualization using state-of-art techniques like t-SNE, UMAP, TRIMAP, and PaCMAP. 
+It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
+
 # Sposób odpalenia (throught python and docker)
 ---
-# Charakterystyka technik i
+# Charakterystyka technik i ich parametrów
 ---
 # Omówienie każdej ze stron + skriny
 ---
+# Opis działania użytej metryki
+# Opis możliwości interpretacji wyniku
 
 
 Projekt:

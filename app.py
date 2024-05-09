@@ -19,8 +19,7 @@ def load_page1():
         'EMNIST',
         'KMNIST',
         'Street View House Numbers (SVHN)',
-        "Generate Synthetic Data",
-        "Upload Dataset"
+        'Upload Dataset'
     ]
 
     selected_dataset = st.selectbox("Choose a dataset to load", dataset_names)
@@ -39,31 +38,19 @@ def load_page1():
         if uploaded_file and st.button("Load Dataset", key="load_predefined_dataset1"):
             handle_uploaded_file(uploaded_file, sample_percentage)
 
-    elif selected_dataset == "Synthetic Data":
-        if st.button("Generate Synthetic Data", key="load_synthetic_dataset"):
-            data, labels = create_synthetic_data(n_samples=1000, n_features=50, n_clusters=3)
-            sampled_data = pd.DataFrame(data).sample(frac=sample_percentage / 100, random_state=42)
-            st.session_state['data'] = sampled_data
-            st.session_state['dataset_loaded'] = True
-            st.success("Synthetic data generated and loaded successfully!")
-
     else:
         if st.button("Load Dataset", key="load_predefined_dataset2"):
             handle_predefined_datasets(selected_dataset, sample_percentage)
 
 
 def load_page2():
-    if 'data' not in st.session_state:
-        st.error("Dataset not loaded in session. Please go back and load a dataset first.")
+    if 'data' not in st.session_state or st.session_state['data'].empty:
+        st.error("No dataset loaded or dataset is empty. Please load a dataset first.")
         return
 
     dataset = st.session_state.get('data', None)
 
-    if dataset is None or (isinstance(dataset, pd.DataFrame) and dataset.empty):
-        st.error("Dataset is not loaded or is empty. Please load a dataset first.")
-        return
-
-    tab1, tab2 = st.tabs(["Technique Selection and Visualization", "Component Analysis"])
+    tab1, tab2 = st.tabs(["Technique Selection and Visualization", "PCA Components Analysis"])
 
     with tab1:
         st.title("Choose Technique and Parameters")
@@ -144,7 +131,7 @@ def load_page2():
             visualize_results(results)
 
         with tab2:
-            st.title("PCA/Kernel PCA + Component Analysis")
+            st.title("PCA Components Analysis")
 
 
 def load_page3():
