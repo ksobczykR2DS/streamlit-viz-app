@@ -1,10 +1,11 @@
 from datautils import *
 import streamlit as st
+from run_experiments import compute_cf_nn, compute_cf
+
 
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
 
 
-# Page functions
 def load_page1():
     st.title("Dimensionality Reduction")
     st.write("""
@@ -49,13 +50,16 @@ def load_page2():
         return
 
     dataset = st.session_state.get('data', None)
+    labels = st.session_state.get('labels', None)
+
+    if labels is None or labels.empty:
+        st.error("Labels are not loaded or are empty. Please ensure labels are loaded.")
+        return
 
     tab1, tab2 = st.tabs(["Technique Selection and Visualization", "PCA Components Analysis"])
 
     with tab1:
         st.title("Choose Technique and Parameters")
-
-        results = {}
 
         use_t_sne = st.checkbox("Use t-SNE")
         use_umap = st.checkbox("Use UMAP")
@@ -107,27 +111,39 @@ def load_page2():
             techniques.append('PacMAP')
 
         if st.button("Confirm and Run Techniques"):
-            if dataset is None:
-                st.error("Dataset is empty. Cannot run techniques.")
-                return
+            results = {}
+            cf_scores = {}
+            for technique in techniques:
+                if 't-SNE' in technique:
+                    results['t-SNE'] = run_t_sne(dataset, **params['t_sne'])
+                    if results['t-SNE'] is not None:
+                        cf_nn_values = compute_cf_nn(results['t-SNE'], labels)
+                        cf_scores['t-SNE'] = compute_cf(cf_nn_values)
+                        st.write(f"t-SNE CF Score: {cf_scores['t-SNE']:.4f}")
 
-            if not techniques:
-                st.error("No techniques selected.")
-                return
+                if 'UMAP' in technique:
+                    results['UMAP'] = run_umap(dataset, **params['umap'])
+                    if results['UMAP'] is not None:
+                        cf_nn_values = compute_cf_nn(results['UMAP'], labels)
+                        cf_scores['UMAP'] = compute_cf(cf_nn_values)
+                        st.write(f"UMAP CF Score: {cf_scores['UMAP']:.4f}")
 
-            # Uruchamianie technik dla wybranego datasetu
-            if use_t_sne:
-                results['t-SNE'] = run_t_sne(dataset, **params['t_sne'])
-            if use_umap:
-                results['UMAP'] = run_umap(dataset, **params['umap'])
-            if use_trimap:
-                results['TRIMAP'] = run_trimap(dataset, **params['trimap'])
-            if use_pacmap:
-                results['PaCMAP'] = run_pacmap(dataset, **params['pacmap'])
+                if 'TRIMAP' in technique:
+                    results['TRIMAP'] = run_trimap(dataset, **params['trimap'])
+                    if results['TRIMAP'] is not None:
+                        cf_nn_values = compute_cf_nn(results['TRIMAP'], labels)
+                        cf_scores['TRIMAP'] = compute_cf(cf_nn_values)
+                        st.write(f"TRIMAP CF Score: {cf_scores['TRIMAP']:.4f}")
+
+                if 'PaCMAP' in technique:
+                    results['PaCMAP'] = run_pacmap(dataset, **params['pacmap'])
+                    if results['PaCMAP'] is not None:
+                        cf_nn_values = compute_cf_nn(results['PaCMAP'], labels)
+                        cf_scores['PaCMAP'] = compute_cf(cf_nn_values)
+                        st.write(f"PaCMAP CF Score: {cf_scores['PaCMAP']:.4f}")
 
             st.session_state['reduced_data'] = results
             st.success("Selected techniques executed successfully.")
-
             visualize_results(results)
 
         with tab2:
