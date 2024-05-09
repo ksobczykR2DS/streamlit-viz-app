@@ -19,8 +19,8 @@ def load_page1():
         'EMNIST',
         'KMNIST',
         'Street View House Numbers (SVHN)',
-        "Upload Dataset",
-        "Synthetic Data"
+        "Generate Synthetic Data",
+        "Upload Dataset"
     ]
 
     selected_dataset = st.selectbox("Choose a dataset to load", dataset_names)
@@ -152,6 +152,10 @@ def load_page3():
     st.write("This is the content of page")
 
 
+def load_page4():
+    raise NotImplementedError
+
+
 def select_page(page_name):
     st.session_state.page = page_name
 
@@ -187,6 +191,7 @@ st.sidebar.markdown("<h1 style='text-align: center;'>Navigation Menu</h1>", unsa
 st.sidebar.button("Load Dataset", on_click=select_page, args=("Load Dataset",))
 st.sidebar.button("Techniques Set Up", on_click=select_page, args=("Techniques Set Up and Visualization",))
 st.sidebar.button("Experiments", on_click=select_page, args=("Experiments",))
+st.sidebar.button("Interactive Visualization", on_click=select_page, args=("Interactive Visualization",))
 
 if st.session_state.page == "Load Dataset":
     load_page1()
@@ -194,3 +199,5 @@ elif st.session_state.page == "Techniques Set Up and Visualization":
     load_page2()
 elif st.session_state.page == "Experiments":
     load_page3()
+elif st.session_state.page == "Interactive Visualization":
+    load_page4()

@@ -14,59 +14,37 @@ import matplotlib.pyplot as plt
 from torchvision import datasets as torch_datasets, transforms
 from torch.utils.data import DataLoader
 import streamlit_ext as ste
+from sklearn.datasets import make_classification
 
 
-def create_synthetic_data(n_samples=300, n_features=50, n_clusters=3):
-    """
-    Generates a synthetic dataset using a mixture of Gaussian distributions.
+def create_synthetic_data(n_samples, n_features, n_clusters):
+    data, labels = make_classification(n_samples=n_samples, n_features=n_features, n_classes=n_clusters)
+    return data, labels
 
-    Parameters:
-    - n_samples : int, default 300
-        Total number of samples to generate.
-    - n_features : int, default 50
-        Number of features for each sample.
-    - n_clusters : int, default 3
-        Number of distinct clusters.
 
-    Returns:
-    - data : numpy.ndarray
-        The generated dataset as a 2D numpy array (n_samples, n_features).
-    - labels : numpy.ndarray
-        The integer labels corresponding to cluster membership of each sample.
-    """
-    np.random.seed(42)  # For reproducibility
-    data = []
-    labels = []
-    samples_per_cluster = n_samples // n_clusters
-
-    for i in range(n_clusters):
-        # Generate random mean and covariance
-        mean = np.random.rand(n_features) * 100
-        cov = np.eye(n_features) * np.random.rand(n_features)  # Diagonal covariance
-
-        # Generate samples for the cluster
-        cluster_data = np.random.multivariate_normal(mean, cov, samples_per_cluster)
-        data.append(cluster_data)
-        labels += [i] * samples_per_cluster
-
-    # Concatenate all cluster data and labels
-    data = np.vstack(data)
-    labels = np.array(labels)
-
+# Ostatnia kolumna musi być targetem, dane tylko numeryczne prócz ostatniej kolumny
+def validate_and_separate_data(df):
+    if df.iloc[:, :-1].select_dtypes(include=[np.number]).shape[1] != df.shape[1] - 1:
+        raise ValueError("All columns except the last must be numeric.")
+    data = df.iloc[:, :-1]
+    labels = df.iloc[:, -1]
     return data, labels
 
 
 def handle_uploaded_file(uploaded_file, sample_percentage):
-    try:
-        dataset = upload_file(uploaded_file, sample_percentage)
-        if isinstance(dataset, str):
-            raise ValueError(dataset)
+    df = pd.read_csv(uploaded_file)
+    data, labels = validate_and_separate_data(df)
+    sampled_data = data.sample(frac=sample_percentage / 100, random_state=42)
+    st.session_state['data'] = sampled_data
+    st.session_state['labels'] = labels
+    st.success("Dataset loaded and validated successfully!")
 
-        st.success(f"The full dataset contains {dataset.shape[0]} rows.")
-        dataset_sampling(dataset, sample_percentage)
-
-    except Exception as e:
-        st.error(f"Error loading dataset: {e}")
+    if st.button("Generate Synthetic Data", key="load_synthetic_dataset"):
+        data, labels = create_synthetic_data(n_samples=1000, n_features=50, n_clusters=3)
+        sampled_data, sampled_labels = data.sample(frac=sample_percentage / 100, random_state=42), labels
+        st.session_state['data'] = sampled_data
+        st.session_state['labels'] = sampled_labels
+        st.success("Synthetic data generated and loaded successfully!")
 
 
 def handle_predefined_datasets(selected_dataset, sample_percentage):
@@ -107,21 +85,21 @@ def dataset_sampling(dataset, sample_percentage):
         if isinstance(dataset, np.ndarray):
             dataset = pd.DataFrame(dataset)
 
-        if hasattr(dataset, 'data'):
-            sampled_data = pd.DataFrame(dataset.data).sample(frac=sample_percentage / 100, random_state=42)
+        if hasattr(dataset, 'data') and hasattr(dataset, 'target'):
+            full_data = pd.DataFrame(dataset.data)
+            full_data['target'] = dataset.target
+            sampled_data = full_data.sample(frac=sample_percentage / 100, random_state=42)
 
-            if hasattr(dataset, 'target'):
-                sampled_data['target'] = dataset.target.sample(frac=sample_percentage / 100, random_state=42).values
-            else:
-                raise ValueError("MNIST dataset should have a 'target' column.")
-
-        else:
+        elif isinstance(dataset, pd.DataFrame):
             sampled_data = dataset.sample(frac=sample_percentage / 100, random_state=42)
+        else:
+            raise ValueError("Dataset format is not supported.")
 
         if sampled_data.empty:
             raise ValueError("Sampled data is empty.")
 
-        st.session_state['data'] = sampled_data
+        st.session_state['data'] = sampled_data.iloc[:, :-1]
+        st.session_state['labels'] = sampled_data.iloc[:, -1]
         st.session_state['dataset_loaded'] = True
         st.success(f"Sample loaded successfully! Sample size: {sampled_data.shape[0]} rows.")
 
@@ -286,31 +264,6 @@ def load_svhn_dataset():
     return df
 
 
-# Funkcja do ładowania plików przez użytkownika
-def upload_file(uploaded_file, sample_percentage=100):
-    if uploaded_file:
-        try:
-            file_extension = os.path.splitext(uploaded_file.name)[1].lower()
-
-            if file_extension == '.csv':
-                data = pd.read_csv(uploaded_file, encoding='latin-1')
-            elif file_extension in ['.xlsx', '.xls']:
-                data = pd.read_excel(uploaded_file)
-            else:
-                raise ValueError("Invalid file format. Please upload a CSV or Excel file.")
-
-            if not isinstance(data, pd.DataFrame):
-                raise ValueError("Data is not in DataFrame format")
-
-            sample_data = data.sample(frac=sample_percentage / 100, random_state=42)
-
-            return sample_data
-        except Exception as e:
-            return f"Error loading data: {e}"
-
-    return None
-
-
 # Funkcje redukcji wymiarów
 def run_t_sne(dataset, **params):
     if not isinstance(dataset, np.ndarray):
@@ -373,14 +326,6 @@ def run_trimap(dataset, n_inliers, n_outliers, n_random, weight_adj, n_iters):
         st.error(f"ValueError: {ve}")
     except Exception as e:
         st.error(f"Unexpected error: {e}")
-
-
-def run_pacmap(dataset, n_neighbors, mn_ratio, fp_ratio):
-    try:
-        pacmap_transformer = pacmap.PaCMAP(n_neighbors=n_neighbors, MN_ratio=mn_ratio, FP_ratio=fp_ratio)
-        return pacmap_transformer.fit_transform(dataset)
-    except Exception as e:
-        return f"Error performing PaCMAP: {e}"
 
 
 def visualize_results(results):
