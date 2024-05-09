@@ -183,44 +183,38 @@ def run_pacmap(dataset, n_neighbors, mn_ratio, fp_ratio):
         return None
 
 
-def visualize_results(results):
-    if not results:
-        st.error("No results to visualize.")
+def visualize_individual_result(technique, data):
+    if data is None or not hasattr(data, 'size') or data.size == 0:
+        st.error(f"Data for {technique} is empty or invalid.")
         return
 
-    for technique, data in results.items():
-        if isinstance(data, str) or data is None or not hasattr(data, 'size') or data.size == 0:
-            st.error(f"Data for {technique} is empty or invalid.")
-            continue
+    if len(data.shape) != 2:
+        st.error(f"Data for {technique} must be a 2D array.")
+        return
 
-        if len(data.shape) != 2:
-            st.error(f"Data for {technique} must be a 2D array.")
-            continue
+    plt.figure(figsize=(10, 6))
+    if 'labels' in st.session_state and st.session_state['labels'] is not None:
+        sns.scatterplot(x=data[:, 0], y=data[:, 1], hue=st.session_state['labels'], palette='tab10', s=50)
+    else:
+        st.warning("No labels found. Visualization will be monochrome.")
+        sns.scatterplot(x=data[:, 0], y=data[:, 1], s=50)
 
-        plt.figure(figsize=(10, 6))
-        if 'labels' in st.session_state:
-            sns.scatterplot(x=data[:, 0], y=data[:, 1], hue=st.session_state['labels'], palette='tab10', s=50)
-        else:
-            st.warning("No labels found. Visualization will be monochrome.")
-            sns.scatterplot(x=data[:, 0], y=data[:, 1], s=50)
+    plt.title(f"{technique} Visualization")
+    plt.xlabel("Dimension 1")
+    plt.ylabel("Dimension 2")
+    plt.grid(True)
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    st.pyplot(plt)
 
-        plt.title(f"{technique} Visualization")
-        plt.xlabel("Dimension 1")
-        plt.ylabel("Dimension 2")
-        plt.grid(True)
-        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        st.pyplot(plt)
-
-        plot_path = f"{technique}.png"
-        plt.savefig(plot_path)
-        with open(plot_path, "rb") as file:
-            btn = ste.download_button(
-                label="Download image",
-                data=file,
-                file_name=plot_path,
-                mime="image/png"
-            )
-
+    plot_path = f"{technique}.png"
+    plt.savefig(plot_path)
+    with open(plot_path, "rb") as file:
+        st.download_button(
+            label="Download image",
+            data=file,
+            file_name=plot_path,
+            mime="image/png"
+        )
 
 def load_mnist_dataset():
     st.write("Loading MNIST Handwritten Digits dataset...")

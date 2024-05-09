@@ -114,37 +114,45 @@ def load_page2():
             results = {}
             cf_scores = {}
             for technique in techniques:
-                if 't-SNE' in technique:
-                    results['t-SNE'] = run_t_sne(dataset, **params['t_sne'])
-                    if results['t-SNE'] is not None:
-                        cf_nn_values = compute_cf_nn(results['t-SNE'], labels)
+                st.write(f"Processing: {technique}")  # Debug output
+
+                if technique == 't-SNE':
+                    result = run_t_sne(dataset, **params['t_sne'])
+                    results['t-SNE'] = result
+                    if result is not None:
+                        visualize_individual_result('t-SNE', result)
+                        cf_nn_values = compute_cf_nn(result, labels)
                         cf_scores['t-SNE'] = compute_cf(cf_nn_values)
                         st.write(f"t-SNE CF Score: {cf_scores['t-SNE']:.4f}")
 
-                if 'UMAP' in technique:
-                    results['UMAP'] = run_umap(dataset, **params['umap'])
-                    if results['UMAP'] is not None:
-                        cf_nn_values = compute_cf_nn(results['UMAP'], labels)
+                elif technique == 'UMAP':
+                    result = run_umap(dataset, **params['umap'])
+                    results['UMAP'] = result
+                    if result is not None:
+                        visualize_individual_result('UMAP', result)
+                        cf_nn_values = compute_cf_nn(result, labels)
                         cf_scores['UMAP'] = compute_cf(cf_nn_values)
                         st.write(f"UMAP CF Score: {cf_scores['UMAP']:.4f}")
 
-                if 'TRIMAP' in technique:
-                    results['TRIMAP'] = run_trimap(dataset, **params['trimap'])
-                    if results['TRIMAP'] is not None:
-                        cf_nn_values = compute_cf_nn(results['TRIMAP'], labels)
+                elif technique == 'TRIMAP':
+                    result = run_trimap(dataset, **params['trimap'])
+                    results['TRIMAP'] = result
+                    if result is not None:
+                        visualize_individual_result('TRIMAP', result)
+                        cf_nn_values = compute_cf_nn(result, labels)
                         cf_scores['TRIMAP'] = compute_cf(cf_nn_values)
                         st.write(f"TRIMAP CF Score: {cf_scores['TRIMAP']:.4f}")
 
-                if 'PaCMAP' in technique:
-                    results['PaCMAP'] = run_pacmap(dataset, **params['pacmap'])
-                    if results['PaCMAP'] is not None:
-                        cf_nn_values = compute_cf_nn(results['PaCMAP'], labels)
+                elif technique == 'PaCMAP':
+                    result = run_pacmap(dataset, **params['pacmap'])
+                    results['PaCMAP'] = result
+                    if result is not None:
+                        visualize_individual_result('PaCMAP', result)
+                        cf_nn_values = compute_cf_nn(result, labels)
                         cf_scores['PaCMAP'] = compute_cf(cf_nn_values)
                         st.write(f"PaCMAP CF Score: {cf_scores['PaCMAP']:.4f}")
-
             st.session_state['reduced_data'] = results
             st.success("Selected techniques executed successfully.")
-            visualize_results(results)
 
         with tab2:
             st.title("PCA Components Analysis")
