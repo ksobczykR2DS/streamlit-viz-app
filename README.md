@@ -1,5 +1,14 @@
 # TODO, Dokumentacja
 
+
+Datasets:
+https://learn.microsoft.com/en-us/azure/open-datasets/dataset-diabetes?tabs=azureml-opendatasets
+https://keras.io/api/datasets/imdb/
+https://keras.io/api/datasets/reuters/
+https://huggingface.co/
+https://www.openml.org/
+https://www.kaggle.com/docs/api
+
 **Wszystko po angielsku**
 
 # Opis projektu, zawartość
