@@ -20,8 +20,8 @@ def compute_cf_nn(data_2d, labels, nn_max=100):
 
     cf_nn_values = []
     for i in range(len(data_2d)):
-        label = labels[i]
-        neighbors_labels = labels[indices[i]]
+        label = labels.iloc[i]
+        neighbors_labels = labels.iloc[indices[i].tolist()]  # Convert array to list for proper indexing
         cf_nn = np.sum(neighbors_labels == label) / nn_max
         cf_nn_values.append(cf_nn)
 
@@ -70,18 +70,12 @@ techniques_params = {
 
 # W teorii ten kod powinien przyjmować dataset, sam wyciągać sobie label, a następnie zależy, jaka lista do niego
 # przeprowadzać eksperymenty w ilości 'n_iter' przy maksymalizacji metryki 'cf' (ale to tylko teoria)
-def thq_experiments(dataset, technique_names_list, n_iter):
+def perform_experiments(dataset, labels, technique_names_list, n_iter):
     print('Loading techniques...')
     model_dict = {}
     results = []
 
-    # Wyodrębnianie etykiet (zakładając, że ostatnia kolumna zawiera etykiety)
-    data = dataset[:, :-1]
-    labels = dataset[:, -1]
-
-    x_train, x_test, y_train, y_test, labels_train, labels_test = train_test_split(data, labels, test_size=0.2,
-                                                                                   random_state=42)
-
+    x_train, x_test, y_train, y_test = train_test_split(dataset, labels, test_size=0.2, random_state=42)
     try:
         for technique_name in technique_names_list.split(','):
             assert technique_name in techniques_dict.keys(), f'Unknown technique name: {technique_name}'
@@ -92,10 +86,11 @@ def thq_experiments(dataset, technique_names_list, n_iter):
             print(f'Running experiments for {model_name}')
             pipe = Pipeline([('scaler', StandardScaler()), ('dimension_reduction', model)])
 
-            def custom_scorer(pipe, X, y):
-                transformed_data = pipe.fit_transform(X)
+            def custom_scorer(pipe, x, y):
+                transformed_data = pipe.fit_transform(x)
                 cf_nn_values = compute_cf_nn(transformed_data, y, nn_max=100)
                 cf_score = compute_cf(cf_nn_values)
+                print(f'CF Score for {model_name}: {cf_score}')
                 return cf_score
 
             scorer = make_scorer(custom_scorer, greater_is_better=True)
@@ -110,10 +105,13 @@ def thq_experiments(dataset, technique_names_list, n_iter):
             )
 
             opt.fit(x_train, y_train)
+            print(f'Best score for {model_name}: {opt.best_score_}')
+            print(f'Best params for {model_name}: {opt.best_params_}')
 
-            best_score = opt.best_score_
-            best_params = opt.best_params_
-            results.append({'Model': model_name, 'Score': best_score, **best_params})
+            if opt.best_score_ > -np.inf:  # Check if a valid score was found
+                results.append({'Model': model_name, 'Score': opt.best_score_, **opt.best_params_, 'estimator': opt.best_estimator_})
+            else:
+                print(f'No valid score obtained for {model_name}')
 
     except Exception as e:
         print(f'An error occurred: {e}')

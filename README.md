@@ -1,18 +1,28 @@
-# streamlit-viz-tool
-Interactive app designed for advanced data visualization using techniques like t-SNE, UMAP, TRIMAP, and PaCMAP. It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
-
 # TODO, Dokumentacja
+
+
+Datasets:
+https://learn.microsoft.com/en-us/azure/open-datasets/dataset-diabetes?tabs=azureml-opendatasets
+https://keras.io/api/datasets/imdb/
+https://keras.io/api/datasets/reuters/
+https://huggingface.co/
+https://www.openml.org/
+https://www.kaggle.com/docs/api
 
 **Wszystko po angielsku**
 
 # Opis projektu, zawartość
---- 
+Interactive app designed for advanced data visualization using state-of-art techniques like t-SNE, UMAP, TRIMAP, and PaCMAP. 
+It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
+
 # Sposób odpalenia (throught python and docker)
 ---
-# Charakterystyka technik i
+# Charakterystyka technik i ich parametrów
 ---
 # Omówienie każdej ze stron + skriny
 ---
+# Opis działania użytej metryki
+# Opis możliwości interpretacji wyniku
 
 
 Projekt:

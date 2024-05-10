@@ -1,10 +1,12 @@
 from datautils import *
 import streamlit as st
 
+from run_experiments_random import compute_cf_nn, compute_cf, perform_experiments
+from model_utils import create_model, get_embeddings, reduce_dimensions, visualize_embeddings, preprocess_data
+
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
 
 
-# Page functions
 def load_page1():
     st.title("Dimensionality Reduction")
     st.write("""
@@ -13,18 +15,12 @@ def load_page1():
     """)
     dataset_names = [
         'MNIST Handwritten Digits',
-        'Labeled Faces in the Wild (LFW)',
-        'CIFAR-100',
-        'Fashion-MNIST',
-        'EMNIST',
-        'KMNIST',
-        'Street View House Numbers (SVHN)',
-        "Upload Dataset",
-        "Synthetic Data"
+        'Scene Dataset',
+        'Dating Dataset',
+        'Upload Dataset'
     ]
 
     selected_dataset = st.selectbox("Choose a dataset to load", dataset_names)
-
     sample_percentage = st.slider(
         "Sample Size (in percentage)",
         min_value=1,
@@ -39,14 +35,6 @@ def load_page1():
         if uploaded_file and st.button("Load Dataset", key="load_predefined_dataset1"):
             handle_uploaded_file(uploaded_file, sample_percentage)
 
-    elif selected_dataset == "Synthetic Data":
-        if st.button("Generate Synthetic Data", key="load_synthetic_dataset"):
-            data, labels = create_synthetic_data(n_samples=1000, n_features=50, n_clusters=3)
-            sampled_data = pd.DataFrame(data).sample(frac=sample_percentage / 100, random_state=42)
-            st.session_state['data'] = sampled_data
-            st.session_state['dataset_loaded'] = True
-            st.success("Synthetic data generated and loaded successfully!")
-
     else:
         if st.button("Load Dataset", key="load_predefined_dataset2"):
             handle_predefined_datasets(selected_dataset, sample_percentage)
@@ -54,21 +42,20 @@ def load_page1():
 
 def load_page2():
     if 'data' not in st.session_state:
-        st.error("Dataset not loaded in session. Please go back and load a dataset first.")
+        st.error("No dataset loaded or dataset is empty. Please load a dataset first.")
         return
 
     dataset = st.session_state.get('data', None)
+    labels = st.session_state.get('labels', None)
 
-    if dataset is None or (isinstance(dataset, pd.DataFrame) and dataset.empty):
-        st.error("Dataset is not loaded or is empty. Please load a dataset first.")
+    if labels is None or labels.empty:
+        st.error("Labels are not loaded or are empty. Please ensure labels are loaded.")
         return
 
-    tab1, tab2 = st.tabs(["Technique Selection and Visualization", "Component Analysis"])
+    tab1, tab2 = st.tabs(["Technique Selection and Visualization", "PCA Components Analysis"])
 
     with tab1:
         st.title("Choose Technique and Parameters")
-
-        results = {}
 
         use_t_sne = st.checkbox("Use t-SNE")
         use_umap = st.checkbox("Use UMAP")
@@ -112,44 +99,117 @@ def load_page2():
 
         if use_pacmap:
             st.subheader("PaCMAP Parameters")
+            techniques.append('PaCMAP')
             params['pacmap'] = {
                 "n_neighbors": st.slider("Number of Neighbors (PaCMAP)", 10, 200, 15),
                 "mn_ratio": st.slider("MN Ratio", 0.1, 1.0, 0.5, 0.1),
                 "fp_ratio": st.slider("FP Ratio", 1.0, 5.0, 2.0, 0.1)
             }
-            techniques.append('PacMAP')
+            st.write("PaCMAP is selected")
 
         if st.button("Confirm and Run Techniques"):
-            if dataset is None:
-                st.error("Dataset is empty. Cannot run techniques.")
-                return
+            results = {}
+            cf_scores = {}
+            st.write(f"Selected Techniques: {techniques}")
+            for technique in techniques:
+                st.write(f"Processing: {technique}")
 
-            if not techniques:
-                st.error("No techniques selected.")
-                return
+                if technique == 't-SNE':
+                    result = run_t_sne(dataset, **params['t_sne'])
+                    results['t-SNE'] = result
+                    if result is not None:
+                        visualize_individual_result('t-SNE', result)
+                        cf_nn_values = compute_cf_nn(result, labels)
+                        cf_scores['t-SNE'] = compute_cf(cf_nn_values)
+                        st.write(f"t-SNE CF Score: {cf_scores['t-SNE']:.4f}")
 
-            # Uruchamianie technik dla wybranego datasetu
-            if use_t_sne:
-                results['t-SNE'] = run_t_sne(dataset, **params['t_sne'])
-            if use_umap:
-                results['UMAP'] = run_umap(dataset, **params['umap'])
-            if use_trimap:
-                results['TRIMAP'] = run_trimap(dataset, **params['trimap'])
-            if use_pacmap:
-                results['PaCMAP'] = run_pacmap(dataset, **params['pacmap'])
+                elif technique == 'UMAP':
+                    result = run_umap(dataset, **params['umap'])
+                    results['UMAP'] = result
+                    if result is not None:
+                        visualize_individual_result('UMAP', result)
+                        cf_nn_values = compute_cf_nn(result, labels)
+                        cf_scores['UMAP'] = compute_cf(cf_nn_values)
+                        st.write(f"UMAP CF Score: {cf_scores['UMAP']:.4f}")
+
+                elif technique == 'TRIMAP':
+                    result = run_trimap(dataset, **params['trimap'])
+                    results['TRIMAP'] = result
+                    if result is not None:
+                        visualize_individual_result('TRIMAP', result)
+                        cf_nn_values = compute_cf_nn(result, labels)
+                        cf_scores['TRIMAP'] = compute_cf(cf_nn_values)
+                        st.write(f"TRIMAP CF Score: {cf_scores['TRIMAP']:.4f}")
+
+                elif technique == 'PaCMAP':
+                    result = run_pacmap(dataset, **params['pacmap'])
+                    results['PaCMAP'] = result
+                    if result is not None:
+                        visualize_individual_result('PaCMAP', result)
+                        cf_nn_values = compute_cf_nn(result, labels)
+                        cf_scores['PaCMAP'] = compute_cf(cf_nn_values)
+                        st.write(f"PaCMAP CF Score: {cf_scores['PaCMAP']:.4f}")
 
             st.session_state['reduced_data'] = results
             st.success("Selected techniques executed successfully.")
 
-            visualize_results(results)
-
         with tab2:
-            st.title("PCA/Kernel PCA + Component Analysis")
+            st.title("PCA Components Analysis")
 
 
 def load_page3():
     st.title("Experiments")
-    st.write("This is the content of page")
+    st.write("Run experiments to optimize dimensionality reduction techniques based on the CF score and visualize the results.")
+
+    if 'data' not in st.session_state or 'labels' not in st.session_state:
+        st.error("Please load your dataset and labels first.")
+        return
+
+    dataset = np.array(st.session_state['data'], dtype='float64')
+    labels = st.session_state['labels']
+
+    techniques_list = ['t-SNE', 'UMAP', 'TRIMAP', 'PaCMAP']
+    selected_technique = st.selectbox('Select a technique to include in the experiments:', techniques_list)
+    n_iter = st.slider("Select number of iterations for optimization:", min_value=10, max_value=100, value=50, step=10)
+    verbose = st.checkbox("Show detailed output")
+
+    if st.button('Run Experiments'):
+        st.write("Running experiments...")
+        try:
+            results = perform_experiments(dataset, labels, [selected_technique], n_iter, verbose)
+            if results:
+                st.write("Experiments completed successfully.")
+                for result in results:
+                    st.subheader(f"Results for {result['Model']}:")
+                    st.write(f"Best CF Score: {result['Score']:.4f}")
+                    st.write("Best Parameters:")
+                    for param, value in result.items():
+                        if param not in ['Model', 'Score', 'estimator']:
+                            st.write(f"{param}: {value}")
+            else:
+                st.write("No results to display.")
+        except Exception as e:
+            st.error(f"An error occurred while running experiments: {str(e)}")
+
+
+def load_page4():
+    # using plotly
+    st.title("3D Embedding Visualization")
+
+    data = st.session_state.get('data', None)
+    labels = st.session_state.get('labels', None)
+    if data is not None and labels is not None:
+        input_shape = data.shape[1] if isinstance(data, pd.DataFrame) else np.array(data).shape[1]
+        model = create_model(input_shape)
+
+        if st.button('Generate Embeddings and Visualize'):
+            embeddings = get_embeddings(model, data)
+            if embeddings is not None:
+                reduced_embeddings = reduce_dimensions(embeddings)
+                visualize_embeddings(reduced_embeddings, labels)
+
+    else:
+        st.warning("No data or labels available. Please load data and labels into session state before proceeding.")
 
 
 def select_page(page_name):
@@ -187,6 +247,7 @@ st.sidebar.markdown("<h1 style='text-align: center;'>Navigation Menu</h1>", unsa
 st.sidebar.button("Load Dataset", on_click=select_page, args=("Load Dataset",))
 st.sidebar.button("Techniques Set Up", on_click=select_page, args=("Techniques Set Up and Visualization",))
 st.sidebar.button("Experiments", on_click=select_page, args=("Experiments",))
+st.sidebar.button("Interactive Visualization", on_click=select_page, args=("Interactive Visualization",))
 
 if st.session_state.page == "Load Dataset":
     load_page1()
@@ -194,3 +255,5 @@ elif st.session_state.page == "Techniques Set Up and Visualization":
     load_page2()
 elif st.session_state.page == "Experiments":
     load_page3()
+elif st.session_state.page == "Interactive Visualization":
+    load_page4()
