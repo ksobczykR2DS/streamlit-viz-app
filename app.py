@@ -1,7 +1,7 @@
 from datautils import *
 import streamlit as st
 
-from run_experiments import compute_cf_nn, compute_cf, perform_experiments
+from run_experiments_random import compute_cf_nn, compute_cf, perform_experiments
 from model_utils import create_model, get_embeddings, reduce_dimensions, visualize_embeddings, preprocess_data
 
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
@@ -158,43 +158,38 @@ def load_page2():
 
 
 def load_page3():
-    # gridsearch, randomsearch
     st.title("Experiments")
     st.write("Run experiments to optimize dimensionality reduction techniques based on the CF score and visualize the results.")
 
-    if 'data' not in st.session_state:
-        st.error("Please load your dataset first.")
+    if 'data' not in st.session_state or 'labels' not in st.session_state:
+        st.error("Please load your dataset and labels first.")
         return
 
-    dataset = st.session_state.get('data', None)
-    labels = st.session_state.get('labels', None)
+    dataset = np.array(st.session_state['data'], dtype='float64')
+    labels = st.session_state['labels']
 
     techniques_list = ['t-SNE', 'UMAP', 'TRIMAP', 'PaCMAP']
     selected_technique = st.selectbox('Select a technique to include in the experiments:', techniques_list)
-
-    # Number of iterations for the BayesSearchCV
     n_iter = st.slider("Select number of iterations for optimization:", min_value=10, max_value=100, value=50, step=10)
+    verbose = st.checkbox("Show detailed output")
 
     if st.button('Run Experiments'):
-        if selected_technique:
-            st.write("Running experiments...")
-            try:
-                results = perform_experiments(dataset, labels, selected_technique, n_iter)
-                if results:
-                    st.write("Experiments completed successfully.")
-                    for result in results:
-                        st.subheader(f"Results for {result['Model']}:")
-                        st.write(f"Best CF Score: {result['Score']:.4f}")
-                        st.write("Best Parameters:")
-                        for param, value in result.items():
-                            if param not in ['Model', 'Score']:
-                                st.write(f"{param}: {value}")
-                else:
-                    st.write("No results to display.")
-            except Exception as e:
-                st.error(f"An error occurred while running experiments: {str(e)}")
-        else:
-            st.error("Please select a technique to run experiments.")
+        st.write("Running experiments...")
+        try:
+            results = perform_experiments(dataset, labels, [selected_technique], n_iter, verbose)
+            if results:
+                st.write("Experiments completed successfully.")
+                for result in results:
+                    st.subheader(f"Results for {result['Model']}:")
+                    st.write(f"Best CF Score: {result['Score']:.4f}")
+                    st.write("Best Parameters:")
+                    for param, value in result.items():
+                        if param not in ['Model', 'Score', 'estimator']:
+                            st.write(f"{param}: {value}")
+            else:
+                st.write("No results to display.")
+        except Exception as e:
+            st.error(f"An error occurred while running experiments: {str(e)}")
 
 
 def load_page4():
