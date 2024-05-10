@@ -1,8 +1,7 @@
 from datautils import *
 import streamlit as st
-
 from run_experiments_random import compute_cf_nn, compute_cf, perform_experiments
-from model_utils import create_model, get_embeddings, reduce_dimensions, visualize_embeddings, preprocess_data
+from model_utils import create_model, get_embeddings, reduce_dimensions, visualize_embeddings
 
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
 
@@ -105,7 +104,6 @@ def load_page2():
                 "mn_ratio": st.slider("MN Ratio", 0.1, 1.0, 0.5, 0.1),
                 "fp_ratio": st.slider("FP Ratio", 1.0, 5.0, 2.0, 0.1)
             }
-            st.write("PaCMAP is selected")
 
         if st.button("Confirm and Run Techniques"):
             results = {}
@@ -168,10 +166,10 @@ def load_page3():
     dataset = np.array(st.session_state['data'], dtype='float64')
     labels = st.session_state['labels']
 
-    techniques_list = ['t-SNE', 'UMAP', 'TRIMAP', 'PaCMAP']
+    techniques_list = ['t-SNE', 'UMAP']
     selected_technique = st.selectbox('Select a technique to include in the experiments:', techniques_list)
     n_iter = st.slider("Select number of iterations for optimization:", min_value=10, max_value=100, value=50, step=10)
-    verbose = st.checkbox("Show detailed output")
+    verbose = st.checkbox("Show detailed information.")
 
     if st.button('Run Experiments'):
         st.write("Running experiments...")
@@ -180,12 +178,14 @@ def load_page3():
             if results:
                 st.write("Experiments completed successfully.")
                 for result in results:
-                    st.subheader(f"Results for {result['Model']}:")
-                    st.write(f"Best CF Score: {result['Score']:.4f}")
-                    st.write("Best Parameters:")
+                    st.subheader(f"Results for {result['Model']} random search:")
+                    st.write(f"Best parameters to perform {result['Model']}:")
                     for param, value in result.items():
                         if param not in ['Model', 'Score', 'estimator']:
-                            st.write(f"{param}: {value}")
+                            if isinstance(value, float):
+                                st.write(f"\t{param}: {value:.2f}")
+                            else:
+                                st.write(f"\t{param}: {value}")
             else:
                 st.write("No results to display.")
         except Exception as e:
