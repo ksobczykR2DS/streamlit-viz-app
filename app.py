@@ -1,3 +1,5 @@
+import numpy as np
+
 from datautils import *
 import streamlit as st
 from run_experiments_random import compute_cf_nn, compute_cf, perform_experiments

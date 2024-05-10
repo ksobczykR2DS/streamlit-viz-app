@@ -6,10 +6,8 @@ from sklearn.metrics import make_scorer
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import RandomizedSearchCV
 import streamlit as st
-from trimap import TRIMAP
 from umap.umap_ import UMAP
 from sklearn.manifold import TSNE
-from pacmap import PaCMAP
 
 
 def compute_cf_nn(data_2d, labels, nn_max=100):
