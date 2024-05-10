@@ -15,17 +15,12 @@ def load_page1():
     """)
     dataset_names = [
         'MNIST Handwritten Digits',
-        'Labeled Faces in the Wild (LFW)',
-        'CIFAR-100',
-        'Fashion-MNIST',
-        'EMNIST',
-        'KMNIST',
-        'Street View House Numbers (SVHN)',
+        'Scene Dataset',
+        'Dating Dataset',
         'Upload Dataset'
     ]
 
     selected_dataset = st.selectbox("Choose a dataset to load", dataset_names)
-
     sample_percentage = st.slider(
         "Sample Size (in percentage)",
         min_value=1,
@@ -163,6 +158,7 @@ def load_page2():
 
 
 def load_page3():
+    # gridsearch, randomsearch
     st.title("Experiments")
     st.write("Run experiments to optimize dimensionality reduction techniques based on the CF score and visualize the results.")
 
@@ -202,6 +198,7 @@ def load_page3():
 
 
 def load_page4():
+    # using plotly
     st.title("3D Embedding Visualization")
 
     data = st.session_state.get('data', None)
