@@ -3,9 +3,7 @@ import numpy as np
 from datautils import *
 import streamlit as st
 from run_experiments_random import compute_cf_nn, compute_cf, perform_experiments
-from model_utils import create_model, get_embeddings, reduce_dimensions, visualize_embeddings
 from PCA_analysis import *
-from run_experiments import compute_cf_nn, compute_cf, perform_experiments
 from sklearn.cluster import KMeans
 
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
@@ -164,7 +162,7 @@ def load_page3():
 
     # Slider do wyboru liczby komponentów
     max_components = min(len(data_for_pca.columns), len(data_for_pca))
-    n_components = st.slider("Number of Principal Components", min_value=2, max_value=max_components, value=min(3, max_components))
+    n_components = st.slider("Number of Principal Components", min_value=1, max_value=max_components, value=min(3, max_components))
 
     run_pca = st.checkbox("📊 Show PCA Plot", value=False)
     run_biplot = n_components == 2 and st.checkbox("🔍 Show Biplot", value=False)
@@ -183,8 +181,57 @@ def load_page3():
             st.session_state['analysis_performed'] = True
             st.success("PCA analysis completed!")
 
+            if run_pca:
+                if n_components == 2:
+                    plot_pca(components, labels=st.session_state.get('labels'))
+                elif n_components > 2:
+                    plot_pca_3d(components, labels=st.session_state.get('labels'))
 
-def load_page3():
+            if run_biplot:
+                pca = PCA(n_components=n_components)
+                components = pca.fit_transform(data_for_pca)
+                plot_pca_biplot(components, data_for_pca.columns, pca, labels=st.session_state.get('labels'))
+
+            if run_explained_variance:
+                plot_explained_variance(variance_ratio)
+
+            if run_loadings_heatmap:
+                pca = PCA(n_components=min(10, len(data_for_pca.columns)))
+                pca.fit(data_for_pca)
+                plot_pca_loadings_heatmap(pca, data_for_pca.columns)
+
+            if perform_clustering:
+                kmeans = KMeans(n_clusters=n_clusters)
+                labels = kmeans.fit_predict(components[:, :n_components])
+                fig = px.scatter(components, x=0, y=1, color=labels)
+                st.plotly_chart(fig)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if 'components' in st.session_state:
+            components_df = pd.DataFrame(st.session_state['components'])
+            csv_data = export_analysis(components_df)
+            download_button = st.download_button(
+                label="Download PCA Analysis as CSV",
+                data=csv_data,
+                file_name="pca_analysis.csv",
+                mime='text/csv'
+            )
+
+    with col2:
+        if st.session_state.get('analysis_performed', False):
+            if st.button('Reset Analysis'):
+                keys_to_clear = ['components', 'variance_ratio', 'analysis_performed', 'downloaded']
+                for key in keys_to_clear:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                st.experimental_rerun()
+
+    if st.session_state.get('downloaded', False):
+        st.success("File downloaded successfully!")
+
+
+def load_page4():
     st.title("Experiments")
     st.write("Run experiments to optimize dimensionality reduction techniques based on the CF score and visualize the results.")
 
