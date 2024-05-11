@@ -4,7 +4,7 @@ from sklearn.decomposition import PCA
 import plotly.express as px
 import streamlit as st
 import plotly.graph_objects as go
-
+import io
 
 def perform_pca(data, n_components=3):
     pca = PCA(n_components=n_components)
@@ -70,8 +70,43 @@ def plot_explained_variance(explained_variance_ratio):
 
 def plot_pca_loadings_heatmap(pca, feature_names):
     loadings = pca.components_
-    fig = px.imshow(loadings, x=feature_names, y=[f"Component {i+1}" for i in range(loadings.shape[0])],
-                     labels=dict(x="Feature", y="Component", color="Loading"))
-    fig.update_layout(title="PCA Component Loadings")
+    loadings_df = pd.DataFrame(loadings, columns=feature_names,
+                               index=[f"Component {i + 1}" for i in range(loadings.shape[0])])
+
+    fig = px.imshow(loadings_df, text_auto=True,
+                    labels=dict(x="Feature", y="Component", color="Loading"),
+                    x=feature_names,
+                    y=[f"Component {i + 1}" for i in range(loadings.shape[0])])
+    fig.update_xaxes(side="bottom")
+    fig.update_layout(
+        title="PCA Component Loadings",
+        xaxis_title="Features",
+        yaxis_title="Components",
+        coloraxis_colorbar=dict(
+            title="Loading"
+        ),
+        autosize=False,
+        width=1000,
+        height=400
+    )
     st.plotly_chart(fig, use_container_width=True)
 
+def calculate_statistics(components_df):
+    description = components_df.describe()
+    return description
+
+def perform_advanced_analysis(components_df):
+    correlation = components_df.corr()
+    return correlation
+
+def export_analysis(components_df):
+    stats = calculate_statistics(components_df)
+    correlation = perform_advanced_analysis(components_df)
+
+    output = io.StringIO()
+    stats.to_csv(output, mode='a')
+    output.write("\nCorrelation Matrix:\n")
+    correlation.to_csv(output, mode='a')
+
+    output.seek(0)
+    return output.getvalue()
