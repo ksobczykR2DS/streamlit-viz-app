@@ -210,7 +210,9 @@ def load_page3():
                     plot_pca_3d(components, labels=st.session_state.get('labels'))
 
             if run_biplot:
-                plot_pca_biplot(components, data_for_pca, labels=st.session_state.get('labels'))
+                pca = PCA(n_components=n_components)
+                components = pca.fit_transform(data_for_pca)
+                plot_pca_biplot(components, data_for_pca.columns, pca, labels=st.session_state.get('labels'))
 
             if run_explained_variance:
                 plot_explained_variance(variance_ratio)

@@ -25,14 +25,12 @@ def plot_pca_3d(components, labels=None):
     fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
     st.plotly_chart(fig, use_container_width=True)
 
-def plot_pca_biplot(features, labels=None):
-    pca = PCA(n_components=2)
-    components = pca.fit_transform(features)  # Przetwarzanie wewnątrz funkcji
+def plot_pca_biplot(components, feature_names, pca, labels=None):
     loadings = pca.components_.T * np.sqrt(pca.explained_variance_)
 
     fig = px.scatter(x=components[:, 0], y=components[:, 1], color=labels,
                      labels={'x': 'Principal Component 1', 'y': 'Principal Component 2'})
-    for i, feature in enumerate(features.columns):
+    for i, feature in enumerate(feature_names):
         fig.add_shape(
             type='line',
             x0=0, y0=0,
