@@ -1,83 +1,55 @@
 from datautils import *
-import streamlit as st
 from PCA_analysis import *
 from run_experiments import compute_cf_nn, compute_cf, perform_experiments
-from model_utils import create_model, get_embeddings, reduce_dimensions, visualize_embeddings, preprocess_data
 from sklearn.cluster import KMeans
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
-import io
-
 
 
 def load_page1():
+    #TODO dokumentacja: opis apki i wstęp
+    # TODO dokumentacja: użytkownik powinien dostać info o tym jaki dataset moze wprowadzić /
+    #  czyli same wartości numeryczne prócz ostatniej, ostatni kolumna 'target' z opisanymi klasami
     st.title("Dimensionality Reduction")
     st.write("""
         Interactive app designed for advanced data visualization using techniques like t-SNE, UMAP, TRIMAP, and PaCMAP.
         It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
     """)
 
-    if st.button("Reset Application"):
-        keys_to_clear = ['data', 'sampled_data', 'dataset_loaded']
-        for key in keys_to_clear:
-            if key in st.session_state:
-                del st.session_state[key]
-        st.experimental_rerun()
-
     dataset_names = [
         'SignMNIST Dataset',
         'Scene Dataset',
         'Dating Dataset',
         'CIFAR-10 Dataset',
-        'Upload Dataset',
-        'Select a dataset...'
+        'Upload Dataset'
     ]
 
-    def load_dataset(name):
-        if name == 'SignMNIST Dataset':
-            return get_sign_mnist_data(100)
-        elif name == 'Scene Dataset':
-            return get_scene_data(100)
-        elif name == 'Dating Dataset':
-            return get_dating_data(100)
-        elif name == 'CIFAR-10 Dataset':
-            return get_cifar_10_data(100)
+    selected_dataset = st.selectbox("Choose a dataset to load", dataset_names, index=0)
+    uploaded_file = None
+    if selected_dataset == "Upload Dataset":
+        uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"])
 
-    selected_dataset = st.selectbox("Choose a dataset to load", dataset_names, index=len(dataset_names) - 1)
+    sample_percentage = st.slider(
+            "Sample Size (in percentage)",
+            min_value=1,
+            max_value=100,
+            value=100
+        )
 
-    if selected_dataset and selected_dataset != "Select a dataset...":
-        if selected_dataset == "Upload Dataset":
-            uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"])
-            if uploaded_file:
-                if st.button("Load Dataset", key='load_uploaded_data'):
-                    with st.spinner('Loading data...'):
-                        handle_uploaded_file(uploaded_file, 100)
-                    st.success("Dataset loaded successfully!")
-        else:
-            if st.button(f"Load {selected_dataset}", key=f'load_{selected_dataset}'):
-                with st.spinner(f'Loading {selected_dataset}...'):
-                    load_dataset(selected_dataset)
-                st.success(f"{selected_dataset} loaded successfully!")
+    if st.button("Load Dataset", key='load_selected_dataset'):
+        if selected_dataset == "Upload Dataset" and uploaded_file is not None:
+            load_uploaded_data(uploaded_file, sample_percentage)
+        elif selected_dataset != "Upload Dataset":
+            load_other_datasets(selected_dataset)
 
-        if 'data' in st.session_state and not st.session_state['data'].empty:
-            st.subheader("Preview of loaded data")
-            st.dataframe(st.session_state['data'].head())
-            if st.checkbox("Show distribution of a feature"):
-                selected_column = st.selectbox('Select column', st.session_state['data'].columns)
-                fig, ax = plt.subplots()
-                sns.histplot(st.session_state['data'][selected_column], kde=True, ax=ax)
-                st.pyplot(fig)
+    if 'data' in st.session_state and st.session_state.get('dataset_loaded', False):
+        st.subheader("Preview of loaded data")
+        st.dataframe(st.session_state['data'].head())
 
-            sample_percentage = st.slider(
-                "Sample Size (in percentage)",
-                min_value=1,
-                max_value=100,
-                value=100
-            )
-            if st.button("Sample Data", key='sample_data_button'):
-                sampled_data = dataset_sampling(st.session_state['data'], sample_percentage)
-                if sampled_data is not None and not sampled_data.empty:
-                    st.session_state['sampled_data'] = sampled_data
+        if st.checkbox("Show distribution of a feature", value=False):
+            selected_column = st.selectbox('Select column', st.session_state['data'].columns)
+            plot_distribution(selected_column)
 
+    st.write("Press 'R' to reset the application if something goes wrong.")
 
 
 def load_page2():
@@ -184,7 +156,7 @@ def load_page3():
 
     # Slider do wyboru liczby komponentów
     max_components = min(len(data_for_pca.columns), len(data_for_pca))
-    n_components = st.slider("Number of Principal Components", min_value=1, max_value=max_components, value=min(3, max_components))
+    n_components = st.slider("Number of Principal Components", min_value=2, max_value=max_components, value=min(3, max_components))
 
     run_pca = st.checkbox("📊 Show PCA Plot", value=False)
     run_biplot = n_components == 2 and st.checkbox("🔍 Show Biplot", value=False)
@@ -254,9 +226,8 @@ def load_page3():
 
 
 def load_page4():
-    # gridsearch, randomsearch
-    st.title("Experiments")
-    st.write("Run experiments to optimize dimensionality reduction techniques based on the CF score and visualize the results.")
+    st.title("Technique Tuning with RandomSearch")
+    st.write("Run experiments for t-SNE/UMAP to optimize dimensionality reduction techniques based on the CF score and visualize the results.")
 
     if 'data' not in st.session_state:
         st.error("Please load your dataset first.")
@@ -268,8 +239,8 @@ def load_page4():
     techniques_list = ['t-SNE', 'UMAP', 'TRIMAP', 'PaCMAP']
     selected_technique = st.selectbox('Select a technique to include in the experiments:', techniques_list)
 
-    # Number of iterations for the BayesSearchCV
-    n_iter = st.slider("Select number of iterations for optimization:", min_value=10, max_value=100, value=50, step=10)
+    # Number of iterations for the RandomSearch
+    n_iter = st.slider("Select number of iterations for optimization:", min_value=10, max_value=100, value=30, step=1)
 
     if st.button('Run Experiments'):
         if selected_technique:
@@ -293,32 +264,13 @@ def load_page4():
             st.error("Please select a technique to run experiments.")
 
 
-
-def load_page5():
-    # using plotly
-    st.title("3D Embedding Visualization")
-
-    data = st.session_state.get('data', None)
-    labels = st.session_state.get('labels', None)
-    if data is not None and labels is not None:
-        input_shape = data.shape[1] if isinstance(data, pd.DataFrame) else np.array(data).shape[1]
-        model = create_model(input_shape)
-
-        if st.button('Generate Embeddings and Visualize'):
-            embeddings = get_embeddings(model, data)
-            if embeddings is not None:
-                reduced_embeddings = reduce_dimensions(embeddings)
-                visualize_embeddings(reduced_embeddings, labels)
-
-    else:
-        st.warning("No data or labels available. Please load data and labels into session state before proceeding.")
+# ----- sidebar and page management
 
 
 def select_page(page_name):
     st.session_state.page = page_name
 
 
-# SIDEBAR
 if 'page' not in st.session_state:
     st.session_state.page = "Load Dataset"
 
@@ -347,10 +299,9 @@ st.markdown(
 st.sidebar.markdown("<h1 style='text-align: center;'>Navigation Menu</h1>", unsafe_allow_html=True)
 
 st.sidebar.button("Load Dataset", on_click=select_page, args=("Load Dataset",))
-st.sidebar.button("Techniques Set Up", on_click=select_page, args=("Techniques Set Up and Visualization",))
+st.sidebar.button("Techniques Set Up and Visualization", on_click=select_page, args=("Techniques Set Up and Visualization",))
 st.sidebar.button("PCA Components Analysis", on_click=select_page, args=("PCA Components Analysis",))
-st.sidebar.button("Experiments", on_click=select_page, args=("Experiments",))
-st.sidebar.button("Interactive Visualization", on_click=select_page, args=("Interactive Visualization",))
+st.sidebar.button("Technique Tuning with RandomSearch", on_click=select_page, args=("Technique Tuning with RandomSearch",))
 
 if st.session_state.page == "Load Dataset":
     load_page1()
@@ -358,7 +309,5 @@ elif st.session_state.page == "Techniques Set Up and Visualization":
     load_page2()
 elif st.session_state.page == "PCA Components Analysis":
     load_page3()
-elif st.session_state.page == "Experiments":
+elif st.session_state.page == "Technique Tuning with RandomSearch":
     load_page4()
-elif st.session_state.page == "Interactive Visualization":
-    load_page5()

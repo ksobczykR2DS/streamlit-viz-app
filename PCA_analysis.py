@@ -6,6 +6,7 @@ import streamlit as st
 import plotly.graph_objects as go
 import io
 
+
 def perform_pca(data, n_components=3):
     pca = PCA(n_components=n_components)
     components = pca.fit_transform(data)
@@ -17,6 +18,7 @@ def plot_pca(components, labels=None):
     fig.update_layout(title="PCA Components Analysis", xaxis_title="PC1", yaxis_title="PC2")
     st.plotly_chart(fig, use_container_width=True)
 
+
 def plot_pca_3d(components, labels=None):
     df = pd.DataFrame(components, columns=[f'PC{i+1}' for i in range(components.shape[1])])
     if labels is not None:
@@ -24,6 +26,7 @@ def plot_pca_3d(components, labels=None):
     fig = px.scatter_3d(df, x='PC1', y='PC2', z='PC3', color='Label', title="3D PCA Visualization")
     fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
     st.plotly_chart(fig, use_container_width=True)
+
 
 def plot_pca_biplot(components, feature_names, pca, labels=None):
     loadings = pca.components_.T * np.sqrt(pca.explained_variance_)
@@ -51,7 +54,6 @@ def plot_pca_biplot(components, feature_names, pca, labels=None):
         yaxis_title="PC 2"
     )
     st.plotly_chart(fig, use_container_width=True)
-
 
 
 def plot_explained_variance(explained_variance_ratio):
@@ -89,13 +91,16 @@ def plot_pca_loadings_heatmap(pca, feature_names):
     )
     st.plotly_chart(fig, use_container_width=True)
 
+
 def calculate_statistics(components_df):
     description = components_df.describe()
     return description
 
+
 def perform_advanced_analysis(components_df):
     correlation = components_df.corr()
     return correlation
+
 
 def export_analysis(components_df):
     stats = calculate_statistics(components_df)

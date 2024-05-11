@@ -9,15 +9,55 @@ import trimap
 from umap.umap_ import UMAP
 import seaborn as sns
 import matplotlib.pyplot as plt
-from torchvision import datasets as torch_datasets, transforms
-from torch.utils.data import DataLoader
 from pacmap import PaCMAP
 import openml
 import plotly.express as px
 
 
+# PAGE 1 UTILS
+def load_uploaded_data(uploaded_file, sample_percentage):
+    try:
+        my_bar = st.progress(0)
+        for percent_complete in range(100):
+            time.sleep(0.01)
+            my_bar.progress(percent_complete + 1)
+        handle_uploaded_file(uploaded_file, sample_percentage)
+        st.success("Dataset loaded successfully!")
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
 
-# Ostatnia kolumna musi być targetem, dane tylko numeryczne prócz ostatniej kolumny (jest git)
+
+def load_other_datasets(name):
+    try:
+        my_bar = st.progress(0)
+        for percent_complete in range(100):
+            time.sleep(0.01)
+            my_bar.progress(percent_complete + 1)
+        data = load_dataset(name)
+        st.session_state['data'] = data
+        st.session_state['dataset_loaded'] = True
+        st.success(f"{name} loaded successfully!")
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+
+
+def load_dataset(name):
+    if name == 'SignMNIST Dataset':
+        return get_sign_mnist_data(100)
+    elif name == 'Scene Dataset':
+        return get_scene_data(100)
+    elif name == 'Dating Dataset':
+        return get_dating_data(100)
+    elif name == 'CIFAR-10 Dataset':
+        return get_cifar_10_data(100)
+
+
+def plot_distribution(selected_column):
+    fig, ax = plt.subplots()
+    sns.histplot(st.session_state['data'][selected_column], kde=True, ax=ax)
+    st.pyplot(fig)
+
+
 def handle_uploaded_file(uploaded_file, sample_percentage):
     df = pd.read_csv(uploaded_file)
     df.rename(columns={df.columns[-1]: 'target'}, inplace=True)
@@ -32,9 +72,8 @@ def handle_uploaded_file(uploaded_file, sample_percentage):
     st.session_state['data'] = sampled_data
     st.session_state['labels'] = sampled_labels
     st.session_state['dataset_loaded'] = True
-    st.experimental_rerun()
 
-# dekompozycja jesli nie zwariujemy, teoretycznie powinno działać dla kazdego ID z openml
+
 def get_dataset_from_openml(dataset_id, sample_percentage):
     with st.spinner('Downloading dataset...'):
         dataset = openml.datasets.get_dataset(
@@ -71,12 +110,12 @@ def get_dataset_from_openml(dataset_id, sample_percentage):
 
     return sampled_df
 
+
 def get_dating_data(sample_percentage):
     dating_dataset_id = 1130
     return get_dataset_from_openml(dating_dataset_id, sample_percentage)
 
-# 40926 - cifar 10 działa
-# 312 - scene działa
+
 def get_scene_data(sample_percentage):
     scene_dataset_id = 312
     return get_dataset_from_openml(scene_dataset_id, sample_percentage)
@@ -86,9 +125,11 @@ def get_sign_mnist_data(sample_percentage):
     sign_mnist_dataset_id = 45082
     return get_dataset_from_openml(sign_mnist_dataset_id, sample_percentage)
 
+
 def get_cifar_10_data(sample_percentage):
     cifar_10_dataset_id = 40926
     return get_dataset_from_openml(cifar_10_dataset_id, sample_percentage)
+
 
 def dataset_sampling(dataset, sample_percentage):
     try:
@@ -113,8 +154,6 @@ def dataset_sampling(dataset, sample_percentage):
         st.error(f"Unexpected error: {e}")
 
 
-# te funkcje do sprawdzenia wszystkiego git ale jak juz dopracujemy predefined datasets to wywalić bo nic przez nie \
-# nie widze
 def handle_predefined_datasets(selected_dataset, sample_percentage):
     try:
         if selected_dataset == 'SignMNIST Dataset':
@@ -132,7 +171,7 @@ def handle_predefined_datasets(selected_dataset, sample_percentage):
         st.error(f"Error loading dataset: {e}")
 
 
-# konwersja do np array dla przyśpieszenia (zostaje)
+# PAGE 2 UTILS
 def convert_dataset(dataset):
     if isinstance(dataset, pd.DataFrame):
         return dataset.values
@@ -141,7 +180,6 @@ def convert_dataset(dataset):
     return dataset
 
 
-# przydałoby sie unormować te funckej bo w t-sne jest **params, a w reszcie wymienione (lepiej chyba wszędzie **params)
 def run_t_sne(dataset, perplexity=30, early_exaggeration=12, learning_rate=200, n_iter=300, metric='euclidean'):
     with st.spinner('Running t-SNE...'):
         try:
@@ -187,6 +225,7 @@ def run_umap(dataset, n_neighbors=15, min_dist=0.1, metric='euclidean'):
             st.error(f"An error occurred while running UMAP: {str(e)}")
             return None
 
+
 def run_trimap(dataset, n_inliers=10, n_outliers=5, n_random=5, weight_adj=500, n_iters=300):
     with st.spinner('Running TRIMAP...'):
         try:
@@ -210,6 +249,7 @@ def run_trimap(dataset, n_inliers=10, n_outliers=5, n_random=5, weight_adj=500, 
             st.error(f"An error occurred while running TRIMAP: {str(e)}")
             return None
 
+
 def run_pacmap(dataset, n_neighbors=50, mn_ratio=0.5, fp_ratio=2.0):
     with st.spinner('Running PaCMAP...'):
         try:
@@ -232,9 +272,7 @@ def run_pacmap(dataset, n_neighbors=50, mn_ratio=0.5, fp_ratio=2.0):
             return None
 
 
-
-# przydałaby się dekompozycja (ale moze zostać)
-def visualize_individual_result(data, result, labels, title="Result Visualization"):
+def visualize_individual_result(result, labels, title="Result Visualization"):
     result_df = pd.DataFrame(result, columns=['Component 1', 'Component 2'])
     result_df['Label'] = labels
 
@@ -243,14 +281,3 @@ def visualize_individual_result(data, result, labels, title="Result Visualizatio
 
     st.plotly_chart(fig, use_container_width=True)
 
-
-def main():
-    try:
-        sample_data = get_dataset_from_openml(1476, 10)  # Gas sensors dataset with 10% sample
-        print(sample_data.head())  # Print the first few rows to inspect
-    except Exception as e:
-        print("Error:", e)
-
-
-if __name__ == "__main__":
-    main()

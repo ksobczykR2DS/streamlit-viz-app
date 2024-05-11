@@ -1,11 +1,12 @@
+from sklearn.metrics import make_scorer
+from sklearn.model_selection import train_test_split
 from sklearn.neighbors import NearestNeighbors
 import numpy as np
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from skopt import BayesSearchCV
 from skopt.space import Integer, Real, Categorical
-from sklearn.metrics import make_scorer
-from sklearn.model_selection import train_test_split
+
 
 from trimap import TRIMAP
 from umap.umap_ import UMAP
@@ -13,7 +14,6 @@ from sklearn.manifold import TSNE
 from pacmap import PaCMAP
 
 
-# Metryki
 def compute_cf_nn(data_2d, labels, nn_max=100):
     nbrs = NearestNeighbors(n_neighbors=nn_max, algorithm='auto').fit(data_2d)
     distances, indices = nbrs.kneighbors(data_2d)
