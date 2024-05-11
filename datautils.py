@@ -2,6 +2,7 @@ import time
 import pandas as pd
 import numpy as np
 from sklearn.manifold import TSNE
+from sklearn.preprocessing import StandardScaler
 import streamlit as st
 import trimap
 from umap.umap_ import UMAP
@@ -48,6 +49,13 @@ def load_dataset(name):
         return get_dating_data(100)
     elif name == 'CIFAR-10 Dataset':
         return get_cifar_10_data(100)
+    elif name == 'test':
+        return get_test_data(100)
+
+
+def get_test_data(sample_percentage):
+    dating_dataset_id = 1468
+    return get_dataset_from_openml(dating_dataset_id, sample_percentage)
 
 
 def plot_distribution(selected_column):
@@ -81,11 +89,9 @@ def get_dataset_from_openml(dataset_id, sample_percentage):
             download_features_meta_data=True
         )
 
-    progress_bar = st.progress(0)
     x, y, categorical_indicator, attribute_names = dataset.get_data(
         target=dataset.default_target_attribute
     )
-    progress_bar.progress(25)
 
     x_df = pd.DataFrame(x, columns=attribute_names)
     if 'target' in attribute_names:
@@ -97,12 +103,10 @@ def get_dataset_from_openml(dataset_id, sample_percentage):
         sample_fraction = sample_percentage / 100.0
         sampled_df = x_df.sample(frac=sample_fraction, random_state=42)
         sampled_labels = y_series[sampled_df.index]
-        progress_bar.progress(75)
 
         st.session_state['data'] = sampled_df
         st.session_state['labels'] = sampled_labels
         st.session_state['dataset_loaded'] = True
-        progress_bar.progress(100)
     else:
         raise ValueError("Sample percentage must be between 0 and 100")
 
@@ -170,18 +174,21 @@ def handle_predefined_datasets(selected_dataset, sample_percentage):
 
 
 # PAGE 2 UTILS
-def convert_dataset(dataset):
+def convert_and_scale_dataset(dataset):
     if isinstance(dataset, pd.DataFrame):
         return dataset.values
     elif not isinstance(dataset, np.ndarray):
         raise ValueError("Dataset must be either a pandas DataFrame or a numpy array.")
-    return dataset
+
+    scaler = StandardScaler()
+    scaled_data = scaler.fit_transform(dataset)
+    return scaled_data
 
 
 def run_t_sne(dataset, perplexity=30, early_exaggeration=12, learning_rate=200, n_iter=300, metric='euclidean'):
     with st.spinner('Running t-SNE...'):
         try:
-            dataset = convert_dataset(dataset)
+            dataset = convert_and_scale_dataset(dataset)
             if dataset is None or dataset.size == 0:
                 st.error('Converted dataset is empty or None.')
                 return None
@@ -205,7 +212,7 @@ def run_t_sne(dataset, perplexity=30, early_exaggeration=12, learning_rate=200, 
 def run_umap(dataset, n_neighbors=15, min_dist=0.1, metric='euclidean'):
     with st.spinner('Running UMAP...'):
         try:
-            dataset = convert_dataset(dataset)
+            dataset = convert_and_scale_dataset(dataset)
             if dataset is None or dataset.size == 0:
                 st.error('Converted dataset is empty or None.')
                 return None
@@ -227,7 +234,7 @@ def run_umap(dataset, n_neighbors=15, min_dist=0.1, metric='euclidean'):
 def run_trimap(dataset, n_inliers=10, n_outliers=5, n_random=5, weight_adj=500, n_iters=300):
     with st.spinner('Running TRIMAP...'):
         try:
-            dataset = convert_dataset(dataset)
+            dataset = convert_and_scale_dataset(dataset)
             if dataset is None or dataset.size == 0:
                 st.error('Converted dataset is empty or None.')
                 return None
@@ -251,7 +258,7 @@ def run_trimap(dataset, n_inliers=10, n_outliers=5, n_random=5, weight_adj=500, 
 def run_pacmap(dataset, n_neighbors=50, mn_ratio=0.5, fp_ratio=2.0):
     with st.spinner('Running PaCMAP...'):
         try:
-            dataset = convert_dataset(dataset)
+            dataset = convert_and_scale_dataset(dataset)
             if dataset is None or dataset.size == 0:
                 st.error('Converted dataset is empty or None.')
                 return None

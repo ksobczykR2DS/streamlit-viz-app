@@ -1,10 +1,6 @@
-import numpy as np
-
 from datautils import *
-import streamlit as st
 from run_experiments_random import compute_cf_nn, compute_cf, perform_experiments
 from PCA_analysis import *
-from sklearn.cluster import KMeans
 
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
 
@@ -22,6 +18,7 @@ def load_page1():
 
     dataset_names = [
         'SignMNIST Dataset',
+        'test',
         'Scene Dataset',
         'Dating Dataset',
         'CIFAR-10 Dataset',
@@ -165,13 +162,8 @@ def load_page3():
     n_components = st.slider("Number of Principal Components", min_value=1, max_value=max_components, value=min(3, max_components))
 
     run_pca = st.checkbox("📊 Show PCA Plot", value=False)
-    run_biplot = n_components == 2 and st.checkbox("🔍 Show Biplot", value=False)
     run_explained_variance = st.checkbox("📈 Show Explained Variance Plot", value=False)
     run_loadings_heatmap = st.checkbox("🔥 Show Loadings Heatmap", value=False)
-    perform_clustering = st.checkbox("🗺️ Perform Clustering on PCA Components", value=False)
-
-    if perform_clustering:
-        n_clusters = st.slider('Select number of clusters', 2, 10, 3)
 
     if st.button("Run Selected PCA Analyses"):
         with st.spinner(f"Performing PCA with {n_components} components..."):
@@ -187,11 +179,6 @@ def load_page3():
                 elif n_components > 2:
                     plot_pca_3d(components, labels=st.session_state.get('labels'))
 
-            if run_biplot:
-                pca = PCA(n_components=n_components)
-                components = pca.fit_transform(data_for_pca)
-                plot_pca_biplot(components, data_for_pca.columns, pca, labels=st.session_state.get('labels'))
-
             if run_explained_variance:
                 plot_explained_variance(variance_ratio)
 
@@ -199,12 +186,6 @@ def load_page3():
                 pca = PCA(n_components=min(10, len(data_for_pca.columns)))
                 pca.fit(data_for_pca)
                 plot_pca_loadings_heatmap(pca, data_for_pca.columns)
-
-            if perform_clustering:
-                kmeans = KMeans(n_clusters=n_clusters)
-                labels = kmeans.fit_predict(components[:, :n_components])
-                fig = px.scatter(components, x=0, y=1, color=labels)
-                st.plotly_chart(fig)
 
     col1, col2 = st.columns(2)
     with col1:
