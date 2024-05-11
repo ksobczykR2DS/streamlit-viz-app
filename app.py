@@ -4,41 +4,60 @@ from datautils import *
 import streamlit as st
 from run_experiments_random import compute_cf_nn, compute_cf, perform_experiments
 from model_utils import create_model, get_embeddings, reduce_dimensions, visualize_embeddings
+from PCA_analysis import *
+from run_experiments import compute_cf_nn, compute_cf, perform_experiments
+from sklearn.cluster import KMeans
 
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
 
 
 def load_page1():
+    #TODO dokumentacja: opis apki i wstęp
+    #TODO dokumentacja: użytkownik powinien dostać info o tym jaki dataset moze wprowadzić /
+    #  czyli same wartości numeryczne prócz ostatniej, ostatni kolumna 'target' z opisanymi klasami
+    #TODO: odesłanie użytkownika do readme.md jesli chce ogarnac jakas metode, czy parametr
     st.title("Dimensionality Reduction")
     st.write("""
         Interactive app designed for advanced data visualization using techniques like t-SNE, UMAP, TRIMAP, and PaCMAP.
         It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
     """)
+
     dataset_names = [
-        'MNIST Handwritten Digits',
+        'SignMNIST Dataset',
         'Scene Dataset',
         'Dating Dataset',
+        'CIFAR-10 Dataset',
         'Upload Dataset'
     ]
 
-    selected_dataset = st.selectbox("Choose a dataset to load", dataset_names)
-    sample_percentage = st.slider(
-        "Sample Size (in percentage)",
-        min_value=1,
-        max_value=100,
-        value=100
-    )
-
+    selected_dataset = st.selectbox("Choose a dataset to load", dataset_names, index=0)
+    uploaded_file = None
     if selected_dataset == "Upload Dataset":
-        st.write("Drag and drop a file (CSV or Excel) to upload, or choose from disk:")
         uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"])
 
-        if uploaded_file and st.button("Load Dataset", key="load_predefined_dataset1"):
-            handle_uploaded_file(uploaded_file, sample_percentage)
+    sample_percentage = st.slider(
+            "Sample Size (in percentage)",
+            min_value=1,
+            max_value=100,
+            value=100
+        )
 
-    else:
-        if st.button("Load Dataset", key="load_predefined_dataset2"):
-            handle_predefined_datasets(selected_dataset, sample_percentage)
+    if st.button("Load Dataset", key='load_selected_dataset'):
+        if selected_dataset == "Upload Dataset" and uploaded_file is not None:
+            load_uploaded_data(uploaded_file, sample_percentage)
+        elif selected_dataset != "Upload Dataset":
+            load_other_datasets(selected_dataset)
+
+    if 'data' in st.session_state and st.session_state.get('dataset_loaded', False):
+        st.subheader("Preview of loaded data")
+        st.dataframe(st.session_state['data'].head())
+
+        if st.checkbox("Show distribution of a feature", value=False):
+            selected_column = st.selectbox('Select column', st.session_state['data'].columns)
+            plot_distribution(selected_column)
+
+    # TODO: przeniescie resetu na sidebar
+    st.write("Press 'R' to reset the application if something goes wrong.")
 
 
 def load_page2():
@@ -46,57 +65,50 @@ def load_page2():
         st.error("No dataset loaded or dataset is empty. Please load a dataset first.")
         return
 
-    dataset = st.session_state.get('data', None)
-    labels = st.session_state.get('labels', None)
+    dataset = st.session_state['data']
+    labels = st.session_state['labels']
 
-    if labels is None or labels.empty:
-        st.error("Labels are not loaded or are empty. Please ensure labels are loaded.")
-        return
+    st.title("Choose Technique and Parameters")
 
-    tab1, tab2 = st.tabs(["Technique Selection and Visualization", "PCA Components Analysis"])
+    use_t_sne = st.checkbox("Use t-SNE")
+    use_umap = st.checkbox("Use UMAP")
+    use_trimap = st.checkbox("Use TRIMAP")
+    use_pacmap = st.checkbox("Use PaCMAP")
 
-    with tab1:
-        st.title("Choose Technique and Parameters")
+    params = {}
+    techniques = []
 
-        use_t_sne = st.checkbox("Use t-SNE")
-        use_umap = st.checkbox("Use UMAP")
-        use_trimap = st.checkbox("Use TRIMAP")
-        use_pacmap = st.checkbox("Use PaCMAP")
+    if use_t_sne:
+        st.subheader("t-SNE Parameters")
+        params['t_sne'] = {
+            "perplexity": st.slider("Perplexity", 5, 100, 30),
+            "early_exaggeration": st.slider("Early Exaggeration", 5, 25, 12),
+            "learning_rate": st.slider("Learning Rate", 10, 1000, value=200, step=10),
+            "n_iter": st.slider("Number of Iterations", 50, 1200, 300),
+            "metric": st.selectbox("Metric", ["euclidean", "manhattan", "cosine"])
+        }
+        techniques.append('t-SNE')
 
-        params = {}
-        techniques = []
+    if use_umap:
+        st.subheader("UMAP Parameters")
+        params['umap'] = {
+            "n_neighbors": st.slider("Number of Neighbors", 10, 200, 15),
+            "min_dist": st.slider("Minimum Distance", 0.0, 0.99, 0.1),
+            "metric": st.selectbox("Metric (UMAP)", ["euclidean", "manhattan", "chebyshev", "minkowski", "canberra"])
+        }
+        techniques.append('UMAP')
 
-        if use_t_sne:
-            st.subheader("t-SNE Parameters")
-            params['t_sne'] = {
-                "perplexity": st.slider("Perplexity", 5, 100, 30),
-                "early_exaggeration": st.slider("Early Exaggeration", 5, 25, 12),
-                "learning_rate": st.slider("Learning Rate", 10, 1000, value=200, step=10),
-                "n_iter": st.slider("Number of Iterations", 50, 1200, 300),
-                "metric": st.selectbox("Metric", ["euclidean", "manhattan", "cosine"])
-            }
-            techniques.append('t-SNE')
-
-        if use_umap:
-            st.subheader("UMAP Parameters")
-            params['umap'] = {
-                "n_neighbors": st.slider("Number of Neighbors", 10, 200, 15),
-                "min_dist": st.slider("Minimum Distance", 0.0, 0.99, 0.1),
-                "metric": st.selectbox("Metric (UMAP)",
-                                       ["euclidean", "manhattan", "chebyshev", "minkowski", "canberra"])
-            }
-            techniques.append('UMAP')
-
-        if use_trimap:
-            st.subheader("TRIMAP Parameters")
-            params['trimap'] = {
-                "n_inliers": st.slider("Number of Inliers", 2, 100, 10),
-                "n_outliers": st.slider("Number of Outliers", 1, 50, 5),
-                "n_random": st.slider("Number of Random", 1, 50, 5),
-                "weight_adj": st.slider("Weight Adjustment", 100, 1000, 500),
-                "n_iters": st.slider("Number of Iterations (TRIMAP)", 50, 1200, 300)
-            }
-            techniques.append('TRIMAP')
+    if use_trimap:
+        st.subheader("TRIMAP Parameters")
+        params['trimap'] = {
+            "n_inliers": st.slider("Number of Inliers", 2, 100, 10),
+            "n_outliers": st.slider("Number of Outliers", 1, 50, 5),
+            "n_random": st.slider("Number of Random", 1, 50, 5),
+            #TODO warning: 'weight_adj' is deprecated and will not be applied. Adjust 'weight_temp' if needed.
+            "weight_adj": st.slider("Weight Adjustment", 100, 1000, 500),
+            "n_iters": st.slider("Number of Iterations (TRIMAP)", 50, 1200, 300)
+        }
+        techniques.append('TRIMAP')
 
         if use_pacmap:
             st.subheader("PaCMAP Parameters")
@@ -107,54 +119,69 @@ def load_page2():
                 "fp_ratio": st.slider("FP Ratio", 1.0, 5.0, 2.0, 0.1)
             }
 
-        if st.button("Confirm and Run Techniques"):
-            results = {}
-            cf_scores = {}
-            st.write(f"Selected Techniques: {techniques}")
-            for technique in techniques:
-                st.write(f"Processing: {technique}")
+    if st.button("Confirm and Run Techniques"):
+        results = {}
+        cf_scores = {}
+        st.write(f"Selected Techniques: {techniques}")
+        for technique in techniques:
+            if technique == 't-SNE':
+                result = run_t_sne(dataset, **params['t_sne'])
+            elif technique == 'UMAP':
+                result = run_umap(dataset, **params['umap'])
+            elif technique == 'TRIMAP':
+                result = run_trimap(dataset, **params['trimap'])
+            else:
+                result = run_pacmap(dataset, **params['pacmap'])
 
-                if technique == 't-SNE':
-                    result = run_t_sne(dataset, **params['t_sne'])
-                    results['t-SNE'] = result
-                    if result is not None:
-                        visualize_individual_result('t-SNE', result)
-                        cf_nn_values = compute_cf_nn(result, labels)
-                        cf_scores['t-SNE'] = compute_cf(cf_nn_values)
-                        st.write(f"t-SNE CF Score: {cf_scores['t-SNE']:.4f}")
+            results[technique] = result
+            if result is not None:
+                visualize_individual_result(data=dataset, result=result, labels=labels, title=f'{technique} Result')
+                cf_nn_values = compute_cf_nn(result, labels)
+                cf_scores[technique] = compute_cf(cf_nn_values)
+                st.write(f"{technique} CF Score: {cf_scores[technique]:.4f}")
 
-                elif technique == 'UMAP':
-                    result = run_umap(dataset, **params['umap'])
-                    results['UMAP'] = result
-                    if result is not None:
-                        visualize_individual_result('UMAP', result)
-                        cf_nn_values = compute_cf_nn(result, labels)
-                        cf_scores['UMAP'] = compute_cf(cf_nn_values)
-                        st.write(f"UMAP CF Score: {cf_scores['UMAP']:.4f}")
+        st.session_state['reduced_data'] = results
+        st.success("Selected techniques executed successfully.")
 
-                elif technique == 'TRIMAP':
-                    result = run_trimap(dataset, **params['trimap'])
-                    results['TRIMAP'] = result
-                    if result is not None:
-                        visualize_individual_result('TRIMAP', result)
-                        cf_nn_values = compute_cf_nn(result, labels)
-                        cf_scores['TRIMAP'] = compute_cf(cf_nn_values)
-                        st.write(f"TRIMAP CF Score: {cf_scores['TRIMAP']:.4f}")
 
-                elif technique == 'PaCMAP':
-                    result = run_pacmap(dataset, **params['pacmap'])
-                    results['PaCMAP'] = result
-                    if result is not None:
-                        visualize_individual_result('PaCMAP', result)
-                        cf_nn_values = compute_cf_nn(result, labels)
-                        cf_scores['PaCMAP'] = compute_cf(cf_nn_values)
-                        st.write(f"PaCMAP CF Score: {cf_scores['PaCMAP']:.4f}")
+def load_page3():
+    st.title("PCA Components Analysis")
+    if 'data' not in st.session_state or st.session_state['data'].empty:
+        st.error("No dataset loaded or dataset is empty. Please load a dataset first.")
+        return
 
-            st.session_state['reduced_data'] = results
-            st.success("Selected techniques executed successfully.")
+    if 'downloaded' not in st.session_state:
+        st.session_state['downloaded'] = False
 
-        with tab2:
-            st.title("PCA Components Analysis")
+    if 'analysis_performed' not in st.session_state:
+        st.session_state['analysis_performed'] = False
+
+    if st.checkbox('Select specific features for PCA'):
+        selected_features = st.multiselect('Select features', st.session_state['data'].columns)
+        data_for_pca = st.session_state['data'][selected_features] if selected_features else st.session_state['data']
+    else:
+        data_for_pca = st.session_state['data']
+
+    # Slider do wyboru liczby komponentów
+    max_components = min(len(data_for_pca.columns), len(data_for_pca))
+    n_components = st.slider("Number of Principal Components", min_value=2, max_value=max_components, value=min(3, max_components))
+
+    run_pca = st.checkbox("📊 Show PCA Plot", value=False)
+    run_biplot = n_components == 2 and st.checkbox("🔍 Show Biplot", value=False)
+    run_explained_variance = st.checkbox("📈 Show Explained Variance Plot", value=False)
+    run_loadings_heatmap = st.checkbox("🔥 Show Loadings Heatmap", value=False)
+    perform_clustering = st.checkbox("🗺️ Perform Clustering on PCA Components", value=False)
+
+    if perform_clustering:
+        n_clusters = st.slider('Select number of clusters', 2, 10, 3)
+
+    if st.button("Run Selected PCA Analyses"):
+        with st.spinner(f"Performing PCA with {n_components} components..."):
+            components, variance_ratio = perform_pca(data_for_pca, n_components)
+            st.session_state['components'] = components
+            st.session_state['variance_ratio'] = variance_ratio
+            st.session_state['analysis_performed'] = True
+            st.success("PCA analysis completed!")
 
 
 def load_page3():
@@ -194,31 +221,13 @@ def load_page3():
             st.error(f"An error occurred while running experiments: {str(e)}")
 
 
-def load_page4():
-    # using plotly
-    st.title("3D Embedding Visualization")
-
-    data = st.session_state.get('data', None)
-    labels = st.session_state.get('labels', None)
-    if data is not None and labels is not None:
-        input_shape = data.shape[1] if isinstance(data, pd.DataFrame) else np.array(data).shape[1]
-        model = create_model(input_shape)
-
-        if st.button('Generate Embeddings and Visualize'):
-            embeddings = get_embeddings(model, data)
-            if embeddings is not None:
-                reduced_embeddings = reduce_dimensions(embeddings)
-                visualize_embeddings(reduced_embeddings, labels)
-
-    else:
-        st.warning("No data or labels available. Please load data and labels into session state before proceeding.")
+# ----- sidebar and page management
 
 
 def select_page(page_name):
     st.session_state.page = page_name
 
 
-# SIDEBAR
 if 'page' not in st.session_state:
     st.session_state.page = "Load Dataset"
 
@@ -247,15 +256,15 @@ st.markdown(
 st.sidebar.markdown("<h1 style='text-align: center;'>Navigation Menu</h1>", unsafe_allow_html=True)
 
 st.sidebar.button("Load Dataset", on_click=select_page, args=("Load Dataset",))
-st.sidebar.button("Techniques Set Up", on_click=select_page, args=("Techniques Set Up and Visualization",))
-st.sidebar.button("Experiments", on_click=select_page, args=("Experiments",))
-st.sidebar.button("Interactive Visualization", on_click=select_page, args=("Interactive Visualization",))
+st.sidebar.button("Techniques Set Up and Visualization", on_click=select_page, args=("Techniques Set Up and Visualization",))
+st.sidebar.button("PCA Components Analysis", on_click=select_page, args=("PCA Components Analysis",))
+st.sidebar.button("Technique Tuning with RandomSearch", on_click=select_page, args=("Technique Tuning with RandomSearch",))
 
 if st.session_state.page == "Load Dataset":
     load_page1()
 elif st.session_state.page == "Techniques Set Up and Visualization":
     load_page2()
-elif st.session_state.page == "Experiments":
+elif st.session_state.page == "PCA Components Analysis":
     load_page3()
-elif st.session_state.page == "Interactive Visualization":
+elif st.session_state.page == "Technique Tuning with RandomSearch":
     load_page4()
