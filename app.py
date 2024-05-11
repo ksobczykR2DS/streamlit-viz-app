@@ -7,8 +7,9 @@ st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
 
 def load_page1():
     #TODO dokumentacja: opis apki i wstęp
-    # TODO dokumentacja: użytkownik powinien dostać info o tym jaki dataset moze wprowadzić /
+    #TODO dokumentacja: użytkownik powinien dostać info o tym jaki dataset moze wprowadzić /
     #  czyli same wartości numeryczne prócz ostatniej, ostatni kolumna 'target' z opisanymi klasami
+    #TODO: odesłanie użytkownika do readme.md jesli chce ogarnac jakas metode, czy parametr
     st.title("Dimensionality Reduction")
     st.write("""
         Interactive app designed for advanced data visualization using techniques like t-SNE, UMAP, TRIMAP, and PaCMAP.
@@ -49,6 +50,7 @@ def load_page1():
             selected_column = st.selectbox('Select column', st.session_state['data'].columns)
             plot_distribution(selected_column)
 
+    # TODO: przeniescie resetu na sidebar
     st.write("Press 'R' to reset the application if something goes wrong.")
 
 
@@ -86,8 +88,7 @@ def load_page2():
         params['umap'] = {
             "n_neighbors": st.slider("Number of Neighbors", 10, 200, 15),
             "min_dist": st.slider("Minimum Distance", 0.0, 0.99, 0.1),
-            "metric": st.selectbox("Metric (UMAP)",
-                                    ["euclidean", "manhattan", "chebyshev", "minkowski", "canberra"])
+            "metric": st.selectbox("Metric (UMAP)", ["euclidean", "manhattan", "chebyshev", "minkowski", "canberra"])
         }
         techniques.append('UMAP')
 
@@ -97,6 +98,7 @@ def load_page2():
             "n_inliers": st.slider("Number of Inliers", 2, 100, 10),
             "n_outliers": st.slider("Number of Outliers", 1, 50, 5),
             "n_random": st.slider("Number of Random", 1, 50, 5),
+            #TODO warning: 'weight_adj' is deprecated and will not be applied. Adjust 'weight_temp' if needed.
             "weight_adj": st.slider("Weight Adjustment", 100, 1000, 500),
             "n_iters": st.slider("Number of Iterations (TRIMAP)", 50, 1200, 300)
         }
@@ -122,7 +124,7 @@ def load_page2():
                 result = run_umap(dataset, **params['umap'])
             elif technique == 'TRIMAP':
                 result = run_trimap(dataset, **params['trimap'])
-            elif technique == 'PaCMAP':
+            else:
                 result = run_pacmap(dataset, **params['pacmap'])
 
             results[technique] = result

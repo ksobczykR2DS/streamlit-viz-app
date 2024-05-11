@@ -7,7 +7,6 @@ from sklearn.preprocessing import StandardScaler
 from skopt import BayesSearchCV
 from skopt.space import Integer, Real, Categorical
 
-
 from trimap import TRIMAP
 from umap.umap_ import UMAP
 from sklearn.manifold import TSNE

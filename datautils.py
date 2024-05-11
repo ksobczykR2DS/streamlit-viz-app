@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 from sklearn.manifold import TSNE
 import streamlit as st
-from sklearn.datasets import fetch_openml
-from sklearn import datasets
 import trimap
 from umap.umap_ import UMAP
 import seaborn as sns
@@ -272,7 +270,7 @@ def run_pacmap(dataset, n_neighbors=50, mn_ratio=0.5, fp_ratio=2.0):
             return None
 
 
-def visualize_individual_result(result, labels, title="Result Visualization"):
+def visualize_individual_result(data, result, labels, title="Result Visualization"):
     result_df = pd.DataFrame(result, columns=['Component 1', 'Component 2'])
     result_df['Label'] = labels
 
