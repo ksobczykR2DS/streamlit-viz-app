@@ -1,3 +1,4 @@
+
 import time
 import pandas as pd
 import numpy as np
@@ -26,18 +27,30 @@ def load_uploaded_data(uploaded_file, sample_percentage):
         st.error(f"Error loading data: {e}")
 
 
-def load_other_datasets(name):
+def load_other_datasets(dataset_name, sample_percentage):
     try:
         my_bar = st.progress(0)
         for percent_complete in range(100):
             time.sleep(0.01)
             my_bar.progress(percent_complete + 1)
-        data = load_dataset(name)
-        st.session_state['data'] = data
-        st.session_state['dataset_loaded'] = True
-        st.success(f"{name} loaded successfully!")
+
+        dataset_functions = {
+            'MNIST Dataset': lambda: get_mnist_dataset(sample_percentage),
+            'CIFAR-10 Dataset': lambda: get_cifar10_dataset(sample_percentage),
+            'SignMNIST Dataset': lambda: get_sign_mnist_data(sample_percentage),
+            'Scene Dataset': lambda: get_scene_data(sample_percentage),
+            'Dating Dataset': lambda: get_dating_data(sample_percentage),
+        }
+
+        if dataset_name in dataset_functions:
+            data, labels = dataset_functions[dataset_name]()
+            st.session_state['data'] = data
+            st.session_state['labels'] = labels
+            st.session_state['dataset_loaded'] = True
     except Exception as e:
         st.error(f"Error loading data: {e}")
+
+
 
 
 def load_dataset(name):
@@ -48,14 +61,10 @@ def load_dataset(name):
     elif name == 'Dating Dataset':
         return get_dating_data(100)
     elif name == 'CIFAR-10 Dataset':
-        return get_cifar_10_data(100)
-    elif name == 'test':
-        return get_test_data(100)
+        return get_cifar10_dataset(100)
+    elif name == 'MNIST Dataset':
+        return get_mnist_dataset(100)
 
-
-def get_test_data(sample_percentage):
-    dating_dataset_id = 1468
-    return get_dataset_from_openml(dating_dataset_id, sample_percentage)
 
 
 def plot_distribution(selected_column):
@@ -89,11 +98,12 @@ def get_dataset_from_openml(dataset_id, sample_percentage):
             download_features_meta_data=True
         )
 
-    x, y, categorical_indicator, attribute_names = dataset.get_data(
+    X, y, categorical_indicator, attribute_names = dataset.get_data(
         target=dataset.default_target_attribute
     )
 
-    x_df = pd.DataFrame(x, columns=attribute_names)
+    X_df = pd.DataFrame(X, columns=attribute_names)
+
     if 'target' in attribute_names:
         y_series = pd.Series(y, name='target')
     else:
@@ -101,37 +111,38 @@ def get_dataset_from_openml(dataset_id, sample_percentage):
 
     if 0 < sample_percentage <= 100:
         sample_fraction = sample_percentage / 100.0
-        sampled_df = x_df.sample(frac=sample_fraction, random_state=42)
+        sampled_df = X_df.sample(frac=sample_fraction, random_state=42)
         sampled_labels = y_series[sampled_df.index]
 
+        # Resetowanie indeksów
+        sampled_df.reset_index(drop=True, inplace=True)
+        sampled_labels.reset_index(drop=True, inplace=True)
+
+        # Zapisywanie próbki danych i etykiet w sesji Streamlit
         st.session_state['data'] = sampled_df
         st.session_state['labels'] = sampled_labels
         st.session_state['dataset_loaded'] = True
+
+        return sampled_df, sampled_labels
     else:
         raise ValueError("Sample percentage must be between 0 and 100")
 
-    return sampled_df
 
 
 def get_dating_data(sample_percentage):
-    dating_dataset_id = 1130
-    return get_dataset_from_openml(dating_dataset_id, sample_percentage)
-
+    return get_dataset_from_openml('1130', sample_percentage)
 
 def get_scene_data(sample_percentage):
-    scene_dataset_id = 312
-    return get_dataset_from_openml(scene_dataset_id, sample_percentage)
-
+    return get_dataset_from_openml('312', sample_percentage)
 
 def get_sign_mnist_data(sample_percentage):
-    sign_mnist_dataset_id = 45082
-    return get_dataset_from_openml(sign_mnist_dataset_id, sample_percentage)
+    return get_dataset_from_openml('45082', sample_percentage)
 
+def get_cifar10_dataset(sample_percentage):
+    return get_dataset_from_openml('40927', sample_percentage)
 
-def get_cifar_10_data(sample_percentage):
-    cifar_10_dataset_id = 40926
-    return get_dataset_from_openml(cifar_10_dataset_id, sample_percentage)
-
+def get_mnist_dataset(sample_percentage):
+    return get_dataset_from_openml('554', sample_percentage)
 
 def dataset_sampling(dataset, sample_percentage):
     try:
@@ -165,7 +176,9 @@ def handle_predefined_datasets(selected_dataset, sample_percentage):
         elif selected_dataset == 'Dating Dataset':
             get_dating_data(sample_percentage)
         elif selected_dataset == 'CIFAR-10 Dataset':
-            get_cifar_10_data(sample_percentage)
+            get_cifar10_dataset(sample_percentage)
+        elif selected_dataset == 'MNIST Dataste':
+            get_mnist_dataset(sample_percentage)
         else:
             st.error("Dataset not recognized. Please select a valid dataset.")
         st.experimental_rerun()
@@ -285,4 +298,5 @@ def visualize_individual_result(data, result, labels, title="Result Visualizatio
     fig.update_traces(marker=dict(size=5, opacity=0.8, line=dict(width=0.5, color='DarkSlateGrey')))
 
     st.plotly_chart(fig, use_container_width=True)
+
 

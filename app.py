@@ -6,10 +6,6 @@ st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
 
 
 def load_page1():
-    #TODO dokumentacja: opis apki i wstęp
-    #TODO dokumentacja: użytkownik powinien dostać info o tym jaki dataset moze wprowadzić /
-    #  czyli same wartości numeryczne prócz ostatniej, ostatni kolumna 'target' z opisanymi klasami
-    #TODO: odesłanie użytkownika do readme.md jesli chce ogarnac jakas metode, czy parametr
     st.title("Dimensionality Reduction")
     st.write("""
         Interactive app designed for advanced data visualization using techniques like t-SNE, UMAP, TRIMAP, and PaCMAP.
@@ -18,7 +14,7 @@ def load_page1():
 
     dataset_names = [
         'SignMNIST Dataset',
-        'test',
+        'MNIST Dataset',
         'Scene Dataset',
         'Dating Dataset',
         'CIFAR-10 Dataset',
@@ -31,17 +27,17 @@ def load_page1():
         uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"])
 
     sample_percentage = st.slider(
-            "Sample Size (in percentage)",
-            min_value=1,
-            max_value=100,
-            value=100
-        )
+        "Sample Size (in percentage)",
+        min_value=1,
+        max_value=100,
+        value=100
+    )
 
     if st.button("Load Dataset", key='load_selected_dataset'):
         if selected_dataset == "Upload Dataset" and uploaded_file is not None:
             load_uploaded_data(uploaded_file, sample_percentage)
         elif selected_dataset != "Upload Dataset":
-            load_other_datasets(selected_dataset)
+            load_other_datasets(selected_dataset, sample_percentage)
 
     if 'data' in st.session_state and st.session_state.get('dataset_loaded', False):
         st.subheader("Preview of loaded data")
@@ -51,7 +47,6 @@ def load_page1():
             selected_column = st.selectbox('Select column', st.session_state['data'].columns)
             plot_distribution(selected_column)
 
-    # TODO: przeniescie resetu na sidebar
     st.write("Press 'R' to reset the application if something goes wrong.")
 
 
