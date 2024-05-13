@@ -37,7 +37,7 @@ def load_other_datasets(dataset_name, sample_percentage):
         dataset_functions = {
             'MNIST Dataset': lambda: get_mnist_dataset(sample_percentage),
             'CIFAR-10 Dataset': lambda: get_cifar10_dataset(sample_percentage),
-            'SignMNIST Dataset': lambda: get_sign_mnist_data(sample_percentage),
+            'Fashion-MNIST Dataset': lambda: get_fashion_mnist_data(sample_percentage),
             'Scene Dataset': lambda: get_scene_data(sample_percentage),
             'Dating Dataset': lambda: get_dating_data(sample_percentage),
         }
@@ -46,6 +46,7 @@ def load_other_datasets(dataset_name, sample_percentage):
             data, labels = dataset_functions[dataset_name]()
             st.session_state['data'] = data
             st.session_state['labels'] = labels
+            st.session_state['dataset_name'] = dataset_name
             st.session_state['dataset_loaded'] = True
     except Exception as e:
         st.error(f"Error loading data: {e}")
@@ -54,8 +55,8 @@ def load_other_datasets(dataset_name, sample_percentage):
 
 
 def load_dataset(name):
-    if name == 'SignMNIST Dataset':
-        return get_sign_mnist_data(100)
+    if name == 'Fashion-MNIST Dataset':
+        return get_fashion_mnist_data(100)
     elif name == 'Scene Dataset':
         return get_scene_data(100)
     elif name == 'Dating Dataset':
@@ -88,6 +89,8 @@ def handle_uploaded_file(uploaded_file, sample_percentage):
     st.session_state['labels'] = sampled_labels
     st.session_state['dataset_loaded'] = True
 
+    st.session_state['uploaded_file_name'] = uploaded_file.name
+
 
 def get_dataset_from_openml(dataset_id, sample_percentage):
     with st.spinner('Downloading dataset...'):
@@ -114,11 +117,9 @@ def get_dataset_from_openml(dataset_id, sample_percentage):
         sampled_df = X_df.sample(frac=sample_fraction, random_state=42)
         sampled_labels = y_series[sampled_df.index]
 
-        # Resetowanie indeksów
         sampled_df.reset_index(drop=True, inplace=True)
         sampled_labels.reset_index(drop=True, inplace=True)
 
-        # Zapisywanie próbki danych i etykiet w sesji Streamlit
         st.session_state['data'] = sampled_df
         st.session_state['labels'] = sampled_labels
         st.session_state['dataset_loaded'] = True
@@ -135,11 +136,11 @@ def get_dating_data(sample_percentage):
 def get_scene_data(sample_percentage):
     return get_dataset_from_openml('312', sample_percentage)
 
-def get_sign_mnist_data(sample_percentage):
-    return get_dataset_from_openml('45082', sample_percentage)
+def get_fashion_mnist_data(sample_percentage):
+    return get_dataset_from_openml('40996', sample_percentage)
 
 def get_cifar10_dataset(sample_percentage):
-    return get_dataset_from_openml('40927', sample_percentage)
+    return get_dataset_from_openml('43067', sample_percentage)
 
 def get_mnist_dataset(sample_percentage):
     return get_dataset_from_openml('554', sample_percentage)
@@ -170,7 +171,7 @@ def dataset_sampling(dataset, sample_percentage):
 def handle_predefined_datasets(selected_dataset, sample_percentage):
     try:
         if selected_dataset == 'SignMNIST Dataset':
-            get_sign_mnist_data(sample_percentage)
+            get_fashion_mnist_data(sample_percentage)
         elif selected_dataset == 'Scene Dataset':
             get_scene_data(sample_percentage)
         elif selected_dataset == 'Dating Dataset':

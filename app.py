@@ -13,7 +13,7 @@ def load_page1():
     """)
 
     dataset_names = [
-        'SignMNIST Dataset',
+        'Fashion-MNIST Dataset',
         'MNIST Dataset',
         'Scene Dataset',
         'Dating Dataset',
@@ -51,63 +51,100 @@ def load_page1():
 
 
 def load_page2():
-    if 'data' not in st.session_state:
-        st.error("No dataset loaded or dataset is empty. Please load a dataset first.")
-        return
+    st.markdown("""
+            <style>
+            .info-text {
+                padding: 10px;
+                font-size: 16px;
+                background-color: #f9f9f9;
+                border-left: 5px solid #4CAF50;
+                margin: 10px 0px;
+                border-radius: 5px;
+            }
+            .params-header {
+                margin-top: 15px;
+                font-weight: bold;
+            }
+            .loaded-dataset {
+                font-size: 24px;  /* Zmniejszony rozmiar czcionki */
+                text-align: center;  /* Wyrównanie tekstu do środka */
+                color: #4CAF50;  /* Kolor tekstu */
+                padding: 10px 0;  /* Dodatkowy padding górny i dolny dla lepszego wyglądu */
+                width: 100%;  /* Zapewnia, że tekst jest centrowany w pełnej szerokości */
+            }
+            </style>
+        """, unsafe_allow_html=True)
 
-    dataset = st.session_state['data']
-    labels = st.session_state['labels']
 
     st.title("Choose Technique and Parameters")
 
-    use_t_sne = st.checkbox("Use t-SNE")
-    use_umap = st.checkbox("Use UMAP")
-    use_trimap = st.checkbox("Use TRIMAP")
-    use_pacmap = st.checkbox("Use PaCMAP")
+    if 'uploaded_file_name' in st.session_state and st.session_state['uploaded_file_name']:
+        uploaded_file_name = st.session_state['uploaded_file_name']
+        st.markdown(f"<div class='loaded-dataset'>Loaded File: {uploaded_file_name}</div>", unsafe_allow_html=True)
+    elif 'dataset_name' in st.session_state and st.session_state['dataset_name']:
+        dataset_name = st.session_state['dataset_name']
+        st.markdown(f"<div class='loaded-dataset'>Loaded Dataset: {dataset_name}</div>", unsafe_allow_html=True)
+    else:
+        st.markdown(f"<div class='loaded-dataset'>No dataset or file uploaded</div>", unsafe_allow_html=True)
 
     params = {}
     techniques = []
 
-    if use_t_sne:
-        st.subheader("t-SNE Parameters")
-        params['t_sne'] = {
-            "perplexity": st.slider("Perplexity", 5, 100, 30),
-            "early_exaggeration": st.slider("Early Exaggeration", 5, 25, 12),
-            "learning_rate": st.slider("Learning Rate", 10, 1000, value=200, step=10),
-            "n_iter": st.slider("Number of Iterations", 50, 1200, 300),
-            "metric": st.selectbox("Metric", ["euclidean", "manhattan", "cosine"])
-        }
-        techniques.append('t-SNE')
+    with st.expander("t-SNE Parameters"):
+        st.markdown("""
+        **t-SNE (t-Distributed Stochastic Neighbor Embedding)** is a powerful machine learning algorithm primarily used for exploring high-dimensional data and reducing it to two or three dimensions for visualization. It effectively reveals structures at many different scales, crucial for interpreting complex datasets.
+        """, unsafe_allow_html=True)
+        use_t_sne = st.checkbox("Activate t-SNE")
+        if use_t_sne:
+            params['t_sne'] = {
+                "perplexity": st.slider("Perplexity", 5, 100, 30),
+                "early_exaggeration": st.slider("Early Exaggeration", 5, 25, 12),
+                "learning_rate": st.slider("Learning Rate", 10, 1000, value=200, step=10),
+                "n_iter": st.slider("Number of Iterations", 50, 1200, 300),
+                "metric": st.selectbox("Metric", ["euclidean", "manhattan", "cosine"])
+            }
+            techniques.append('t-SNE')
 
-    if use_umap:
-        st.subheader("UMAP Parameters")
-        params['umap'] = {
-            "n_neighbors": st.slider("Number of Neighbors", 10, 200, 15),
-            "min_dist": st.slider("Minimum Distance", 0.0, 0.99, 0.1),
-            "metric": st.selectbox("Metric (UMAP)", ["euclidean", "manhattan", "chebyshev", "minkowski", "canberra"])
-        }
-        techniques.append('UMAP')
+    with st.expander("UMAP Parameters"):
+        st.markdown("""
+        **UMAP (Uniform Manifold Approximation and Projection)** is similar to t-SNE but often faster and better at preserving the global structure of data, making it useful for classification, clustering, and visualization.
+        """, unsafe_allow_html=True)
+        use_umap = st.checkbox("Activate UMAP")
+        if use_umap:
+            params['umap'] = {
+                "n_neighbors": st.slider("Number of Neighbors", 10, 200, 15),
+                "min_dist": st.slider("Minimum Distance", 0.0, 0.99, 0.1),
+                "metric": st.selectbox("Metric (UMAP)", ["euclidean", "manhattan", "cosine"])
+            }
+            techniques.append('UMAP')
 
-    if use_trimap:
-        st.subheader("TRIMAP Parameters")
-        params['trimap'] = {
-            "n_inliers": st.slider("Number of Inliers", 2, 100, 10),
-            "n_outliers": st.slider("Number of Outliers", 1, 50, 5),
-            "n_random": st.slider("Number of Random", 1, 50, 5),
-            #TODO warning: 'weight_adj' is deprecated and will not be applied. Adjust 'weight_temp' if needed.
-            "weight_adj": st.slider("Weight Adjustment", 100, 1000, 500),
-            "n_iters": st.slider("Number of Iterations (TRIMAP)", 50, 1200, 300)
-        }
-        techniques.append('TRIMAP')
+    with st.expander("TRIMAP Parameters"):
+        st.markdown("""
+        **TRIMAP (Triplet-based Manifold Learning)** is a dimensionality reduction technique that uses triplet constraints to effectively maintain the global geometry of the data. It applies a weight adjustment mechanism to balance distances to closer neighbors and more distant points, preserving the true manifold structure better over large datasets.
+        """, unsafe_allow_html=True)
+        use_trimap = st.checkbox("Activate TRIMAP")
+        if use_trimap:
+            params['trimap'] = {
+                "n_inliers": st.slider("Number of Inliers", 2, 100, 10),
+                "n_outliers": st.slider("Number of Outliers", 1, 50, 5),
+                "n_random": st.slider("Number of Random", 1, 50, 5),
+                "weight_adj": st.slider("Weight Adjustment", 100, 1000, 500),
+                "n_iters": st.slider("Number of Iterations (TRIMAP)", 50, 1200, 300)
+            }
+            techniques.append('TRIMAP')
 
+    with st.expander("PaCMAP Parameters"):
+        st.markdown("""
+        **PaCMAP (Pairwise Controlled Manifold Approximation Projection)** focuses on the pairwise relationships and controlled organization of nearest neighbors. It is exceptional at preserving both local and global data structures, making it highly suitable for detailed exploratory data analysis.
+        """, unsafe_allow_html=True)
+        use_pacmap = st.checkbox("Activate PaCMAP")
         if use_pacmap:
-            st.subheader("PaCMAP Parameters")
-            techniques.append('PaCMAP')
             params['pacmap'] = {
-                "n_neighbors": st.slider("Number of Neighbors (PaCMAP)", 10, 200, 15),
+                "n_neighbors": st.slider("Number of Neighbors (PaCMAP)", 10, 200, 50),
                 "mn_ratio": st.slider("MN Ratio", 0.1, 1.0, 0.5, 0.1),
                 "fp_ratio": st.slider("FP Ratio", 1.0, 5.0, 2.0, 0.1)
             }
+            techniques.append('PaCMAP')
 
     if st.button("Confirm and Run Techniques"):
         results = {}
@@ -115,23 +152,24 @@ def load_page2():
         st.write(f"Selected Techniques: {techniques}")
         for technique in techniques:
             if technique == 't-SNE':
-                result = run_t_sne(dataset, **params['t_sne'])
+                result = run_t_sne(st.session_state['data'], **params['t_sne'])
             elif technique == 'UMAP':
-                result = run_umap(dataset, **params['umap'])
+                result = run_umap(st.session_state['data'], **params['umap'])
             elif technique == 'TRIMAP':
-                result = run_trimap(dataset, **params['trimap'])
+                result = run_trimap(st.session_state['data'], **params['trimap'])
             else:
-                result = run_pacmap(dataset, **params['pacmap'])
+                result = run_pacmap(st.session_state['data'], **params['pacmap'])
 
             results[technique] = result
             if result is not None:
-                visualize_individual_result(data=dataset, result=result, labels=labels, title=f'{technique} Result')
-                cf_nn_values = compute_cf_nn(result, labels)
+                visualize_individual_result(data=st.session_state['data'], result=result, labels=st.session_state['labels'], title=f'{technique} Result')
+                cf_nn_values = compute_cf_nn(result, st.session_state['labels'])
                 cf_scores[technique] = compute_cf(cf_nn_values)
                 st.write(f"{technique} CF Score: {cf_scores[technique]:.4f}")
 
         st.session_state['reduced_data'] = results
         st.success("Selected techniques executed successfully.")
+
 
 
 def load_page3():
