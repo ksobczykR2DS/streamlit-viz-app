@@ -52,8 +52,6 @@ def load_other_datasets(dataset_name, sample_percentage):
         st.error(f"Error loading data: {e}")
 
 
-
-
 def load_dataset(name):
     if name == 'Fashion-MNIST Dataset':
         return get_fashion_mnist_data(100)
@@ -65,7 +63,6 @@ def load_dataset(name):
         return get_cifar10_dataset(100)
     elif name == 'MNIST Dataset':
         return get_mnist_dataset(100)
-
 
 
 def plot_distribution(selected_column):
@@ -129,9 +126,9 @@ def get_dataset_from_openml(dataset_id, sample_percentage):
         raise ValueError("Sample percentage must be between 0 and 100")
 
 
-
 def get_dating_data(sample_percentage):
     return get_dataset_from_openml('1130', sample_percentage)
+
 
 def get_scene_data(sample_percentage):
     return get_dataset_from_openml('312', sample_percentage)
@@ -139,11 +136,14 @@ def get_scene_data(sample_percentage):
 def get_fashion_mnist_data(sample_percentage):
     return get_dataset_from_openml('40996', sample_percentage)
 
+
 def get_cifar10_dataset(sample_percentage):
     return get_dataset_from_openml('43067', sample_percentage)
 
+
 def get_mnist_dataset(sample_percentage):
     return get_dataset_from_openml('554', sample_percentage)
+
 
 def dataset_sampling(dataset, sample_percentage):
     try:
@@ -178,7 +178,7 @@ def handle_predefined_datasets(selected_dataset, sample_percentage):
             get_dating_data(sample_percentage)
         elif selected_dataset == 'CIFAR-10 Dataset':
             get_cifar10_dataset(sample_percentage)
-        elif selected_dataset == 'MNIST Dataste':
+        elif selected_dataset == 'MNIST Dataset':
             get_mnist_dataset(sample_percentage)
         else:
             st.error("Dataset not recognized. Please select a valid dataset.")
