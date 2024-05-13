@@ -75,13 +75,19 @@ PaCMAP (Pairwise Controlled Manifold Approximation and Projection) Parameters
 
 # Omówienie każdej ze stron + skriny
 
-# PCA Components Analysis
 
-# Technique Parameters Optimization
+## PCA Components Analysis
 
----
-# Opis działania użytej metryki
-# Opis możliwości interpretacji wyniku
+
+## Opis możliwości interpretacji wyniku
+
+
+## Technique Parameters Optimization
+
+
+## Opis działania użytej metryki
+
+
 
 
 
