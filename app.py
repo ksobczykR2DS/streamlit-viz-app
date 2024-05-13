@@ -6,23 +6,30 @@ st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
 
 
 def load_page1():
-    st.title("Dimensionality Reduction")
+    st.title("Explore Data Dimensions: Interactive Visualization")
     st.write("""
         Interactive app designed for advanced data visualization using techniques like t-SNE, UMAP, TRIMAP, and PaCMAP.
-        It supports data loading, sampling, dynamic visualization, and quality metrics assessment.
+        Ideal for researchers and data scientists seeking in-depth analysis and visual insights.
     """)
 
     dataset_names = [
-        'MNIST Dataset',
-        'Fashion-MNIST Dataset',
-        'Scene Dataset',
-        'Upload Dataset'
+        'MNIST Handwritten Digits',
+        'Fashion-MNIST Clothing Items',
+        'Natural Scene Images',
+        'Your Custom Dataset'
     ]
 
     selected_dataset = st.selectbox("Choose a dataset to load", dataset_names, index=0)
     uploaded_file = None
-    if selected_dataset == "Upload Dataset":
-        uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"])
+    if selected_dataset == "Your Custom Dataset":
+        st.write("""
+                        **Data Upload Guidelines:**
+                        1) Data must be numerical, only labels can be strings (and it is recommended they are \
+                        for better visualization readability).
+                        2) The last column should be the target variable for classification problems.
+                        3) Please ensure your file is in CSV, XLSX, or XLS format.
+                    """)
+        uploaded_file = st.file_uploader("Upload your dataset file", type=["csv", "xlsx", "xls"])
 
     sample_percentage = st.slider(
         "Sample Size (in percentage)",

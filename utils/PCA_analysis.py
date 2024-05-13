@@ -28,34 +28,6 @@ def plot_pca_3d(components, labels=None):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def plot_pca_biplot(components, feature_names, pca, labels=None):
-    loadings = pca.components_.T * np.sqrt(pca.explained_variance_)
-
-    fig = px.scatter(x=components[:, 0], y=components[:, 1], color=labels,
-                     labels={'x': 'Principal Component 1', 'y': 'Principal Component 2'})
-    for i, feature in enumerate(feature_names):
-        fig.add_shape(
-            type='line',
-            x0=0, y0=0,
-            x1=loadings[i, 0],
-            y1=loadings[i, 1]
-        )
-        fig.add_annotation(
-            x=loadings[i, 0],
-            y=loadings[i, 1],
-            ax=0, ay=0,
-            xanchor="center",
-            yanchor="bottom",
-            text=feature,
-        )
-    fig.update_layout(
-        title="PCA Biplot",
-        xaxis_title="PC 1",
-        yaxis_title="PC 2"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-
 def plot_explained_variance(explained_variance_ratio):
     cum_var = np.cumsum(explained_variance_ratio)
     fig = go.Figure(data=[

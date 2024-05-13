@@ -34,9 +34,9 @@ def load_other_datasets(dataset_name, sample_percentage):
             my_bar.progress(percent_complete + 1)
 
         dataset_functions = {
-            'MNIST Dataset': lambda: get_mnist_dataset(sample_percentage),
-            'Fashion-MNIST Dataset': lambda: get_fashion_mnist_data(sample_percentage),
-            'Scene Dataset': lambda: get_scene_data(sample_percentage)
+            'MNIST Handwritten Digits': lambda: get_mnist_dataset(sample_percentage),
+            'Fashion-MNIST Clothing Items': lambda: get_fashion_mnist_data(sample_percentage),
+            'Natural Scene Images': lambda: get_scene_data(sample_percentage)
         }
 
         if dataset_name in dataset_functions:
@@ -47,15 +47,6 @@ def load_other_datasets(dataset_name, sample_percentage):
             st.session_state['dataset_loaded'] = True
     except Exception as e:
         st.error(f"Error loading data: {e}")
-
-
-def load_dataset(name):
-    if name == 'Fashion-MNIST Dataset':
-        return get_fashion_mnist_data(100)
-    elif name == 'Scene Dataset':
-        return get_scene_data(100)
-    elif name == 'MNIST Dataset':
-        return get_mnist_dataset(100)
 
 
 def plot_distribution(selected_column):
@@ -129,44 +120,6 @@ def get_fashion_mnist_data(sample_percentage):
 
 def get_mnist_dataset(sample_percentage):
     return get_dataset_from_openml('554', sample_percentage)
-
-
-def dataset_sampling(dataset, sample_percentage):
-    try:
-        if isinstance(dataset, np.ndarray):
-            dataset = pd.DataFrame(dataset)
-        elif hasattr(dataset, 'data') and hasattr(dataset, 'target'):
-            dataset = pd.DataFrame(dataset.data, columns=[f"feature_{i}" for i in range(dataset.data.shape[1])])
-            dataset['target'] = dataset.target
-        if not isinstance(dataset, pd.DataFrame) or dataset.empty:
-            raise ValueError("Dataset format is not supported or empty.")
-
-        sampled_df = dataset.sample(frac=sample_percentage / 100, random_state=42).reset_index(drop=True)
-
-        st.session_state['data'] = sampled_df.iloc[:, :-1]
-        st.session_state['labels'] = sampled_df.iloc[:, -1]
-        st.session_state['dataset_loaded'] = True
-        st.success(f"Sampled data contains {sampled_df.shape[0]} rows and {sampled_df.shape[1]} columns.")
-
-    except ValueError as ve:
-        st.error(f"Value error: {ve}")
-    except Exception as e:
-        st.error(f"Unexpected error: {e}")
-
-
-def handle_predefined_datasets(selected_dataset, sample_percentage):
-    try:
-        if selected_dataset == 'SignMNIST Dataset':
-            get_fashion_mnist_data(sample_percentage)
-        elif selected_dataset == 'Scene Dataset':
-            get_scene_data(sample_percentage)
-        elif selected_dataset == 'MNIST Dataset':
-            get_mnist_dataset(sample_percentage)
-        else:
-            st.error("Dataset not recognized. Please select a valid dataset.")
-        st.experimental_rerun()
-    except Exception as e:
-        st.error(f"Error loading dataset: {e}")
 
 
 # PAGE 2 UTILS
