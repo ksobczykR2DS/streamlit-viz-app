@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from sklearn.decomposition import PCA
-import plotly.express as px
 import streamlit as st
+from sklearn.decomposition import PCA
 import plotly.graph_objects as go
 import io
+import plotly.express as px
 
 
 def perform_pca(data, n_components=3):

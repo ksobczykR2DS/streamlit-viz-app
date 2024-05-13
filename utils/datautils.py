@@ -1,16 +1,15 @@
-import time
 import pandas as pd
 import numpy as np
-from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 import streamlit as st
 import trimap
+from sklearn.manifold import TSNE
 from umap.umap_ import UMAP
-import seaborn as sns
-import matplotlib.pyplot as plt
 from pacmap import PaCMAP
 import openml
 import plotly.express as px
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 # PAGE 1 UTILS
@@ -18,7 +17,6 @@ def load_uploaded_data(uploaded_file, sample_percentage):
     try:
         my_bar = st.progress(0)
         for percent_complete in range(100):
-            time.sleep(0.01)
             my_bar.progress(percent_complete + 1)
         handle_uploaded_file(uploaded_file, sample_percentage)
         st.success("Dataset loaded successfully!")
@@ -30,7 +28,6 @@ def load_other_datasets(dataset_name, sample_percentage):
     try:
         my_bar = st.progress(0)
         for percent_complete in range(100):
-            time.sleep(0.01)
             my_bar.progress(percent_complete + 1)
 
         dataset_functions = {

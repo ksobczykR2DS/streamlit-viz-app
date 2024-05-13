@@ -1,5 +1,5 @@
-from sklearn.neighbors import NearestNeighbors
 import numpy as np
+from sklearn.neighbors import NearestNeighbors
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import make_scorer
