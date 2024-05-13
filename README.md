@@ -39,7 +39,7 @@ Once the container is running, open a web browser and visit http://localhost:850
 1. **Load Dataset**
 
 ![img.png](img.png)
-Introduction
+
 
 The initial page of our web application focuses on dataset loading and visualization, offering options to either choose from predefined datasets (e.g., MNIST, Fashion-MNIST, Scene Dataset) or upload custom datasets in CSV, XLSX, or XLS formats.
 Custom 
@@ -84,6 +84,7 @@ Users can choose to perform PCA using all features of the dataset or select spec
 PCA Configuration
 
 A slider allows users to choose the number of principal components they wish to analyze, with the maximum limit set by the smaller of the number of features or the number of data points to ensure a valid PCA computation.
+
 PCA Execution and Visualization Options
 
 Three checkboxes provide users with options to visualize different aspects of PCA:
