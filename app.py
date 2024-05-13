@@ -269,15 +269,27 @@ def load_page4():
             results = perform_experiments(dataset, labels, [selected_technique], n_iter, verbose)
             if results:
                 st.write("Experiments completed successfully.")
+                best_params = {}
                 for result in results:
                     st.subheader(f"Results for {result['Model']} random search:")
                     st.write(f"Best parameters to perform {result['Model']}:")
                     for param, value in result.items():
                         if param not in ['Model', 'Score', 'estimator']:
+                            best_params[param] = value
                             if isinstance(value, float):
                                 st.write(f"\t{param}: {value:.2f}")
                             else:
                                 st.write(f"\t{param}: {value}")
+
+                results_df = pd.DataFrame([best_params])
+                csv = results_df.to_csv(index=False)
+                st.download_button(
+                    label="Download experiment results as CSV",
+                    data=csv,
+                    file_name='experiment_results.csv',
+                    mime='text/csv',
+                )
+
             else:
                 st.write("No results to display.")
         except Exception as e:
