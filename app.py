@@ -87,12 +87,12 @@ def load_page2():
     params = {}
     techniques = []
 
-    with st.expander("t-SNE Parameters"):
-        st.markdown("""
-        **t-SNE (t-Distributed Stochastic Neighbor Embedding)** is a powerful machine learning algorithm primarily used for exploring high-dimensional data and reducing it to two or three dimensions for visualization. It effectively reveals structures at many different scales, crucial for interpreting complex datasets.
-        """, unsafe_allow_html=True)
-        use_t_sne = st.checkbox("Activate t-SNE")
-        if use_t_sne:
+    use_t_sne = st.checkbox("Activate t-SNE")
+    if use_t_sne:
+        with st.container():
+            st.markdown("""
+            **t-SNE (t-Distributed Stochastic Neighbor Embedding)** is a powerful machine learning algorithm primarily used for exploring high-dimensional data and reducing it to two or three dimensions for visualization. It effectively reveals structures at many different scales, crucial for interpreting complex datasets.
+            """, unsafe_allow_html=True)
             params['t_sne'] = {
                 "perplexity": st.slider("Perplexity", 5, 100, 30),
                 "early_exaggeration": st.slider("Early Exaggeration", 5, 25, 12),
@@ -102,12 +102,12 @@ def load_page2():
             }
             techniques.append('t-SNE')
 
-    with st.expander("UMAP Parameters"):
-        st.markdown("""
-        **UMAP (Uniform Manifold Approximation and Projection)** is similar to t-SNE but often faster and better at preserving the global structure of data, making it useful for classification, clustering, and visualization.
-        """, unsafe_allow_html=True)
-        use_umap = st.checkbox("Activate UMAP")
-        if use_umap:
+    use_umap = st.checkbox("Activate UMAP")
+    if use_umap:
+        with st.container():
+            st.markdown("""
+            **UMAP (Uniform Manifold Approximation and Projection)** is similar to t-SNE but often faster and better at preserving the global structure of data, making it useful for classification, clustering, and visualization.
+            """, unsafe_allow_html=True)
             params['umap'] = {
                 "n_neighbors": st.slider("Number of Neighbors", 10, 200, 15),
                 "min_dist": st.slider("Minimum Distance", 0.0, 0.99, 0.1),
@@ -115,12 +115,12 @@ def load_page2():
             }
             techniques.append('UMAP')
 
-    with st.expander("TRIMAP Parameters"):
-        st.markdown("""
-        **TRIMAP (Triplet-based Manifold Learning)** is a dimensionality reduction technique that uses triplet constraints to effectively maintain the global geometry of the data. It applies a weight adjustment mechanism to balance distances to closer neighbors and more distant points, preserving the true manifold structure better over large datasets.
-        """, unsafe_allow_html=True)
-        use_trimap = st.checkbox("Activate TRIMAP")
-        if use_trimap:
+    use_trimap = st.checkbox("Activate TRIMAP")
+    if use_trimap:
+        with st.container():
+            st.markdown("""
+            **TRIMAP (Triplet-based Manifold Learning)** is a dimensionality reduction technique that uses triplet constraints to effectively maintain the global geometry of the data. It applies a weight adjustment mechanism to balance distances to closer neighbors and more distant points, preserving the true manifold structure better over large datasets.
+            """, unsafe_allow_html=True)
             params['trimap'] = {
                 "n_inliers": st.slider("Number of Inliers", 2, 100, 10),
                 "n_outliers": st.slider("Number of Outliers", 1, 50, 5),
@@ -130,12 +130,12 @@ def load_page2():
             }
             techniques.append('TRIMAP')
 
-    with st.expander("PaCMAP Parameters"):
-        st.markdown("""
-        **PaCMAP (Pairwise Controlled Manifold Approximation Projection)** focuses on the pairwise relationships and controlled organization of nearest neighbors. It is exceptional at preserving both local and global data structures, making it highly suitable for detailed exploratory data analysis.
-        """, unsafe_allow_html=True)
-        use_pacmap = st.checkbox("Activate PaCMAP")
-        if use_pacmap:
+    use_pacmap = st.checkbox("Activate PaCMAP")
+    if use_pacmap:
+        with st.container():
+            st.markdown("""
+            **PaCMAP (Pairwise Controlled Manifold Approximation Projection)** focuses on the pairwise relationships and controlled organization of nearest neighbors. It is exceptional at preserving both local and global data structures, making it highly suitable for detailed exploratory data analysis.
+            """, unsafe_allow_html=True)
             params['pacmap'] = {
                 "n_neighbors": st.slider("Number of Neighbors (PaCMAP)", 10, 200, 50),
                 "mn_ratio": st.slider("MN Ratio", 0.1, 1.0, 0.5, 0.1),
@@ -154,7 +154,7 @@ def load_page2():
                 result = run_umap(st.session_state['data'], **params['umap'])
             elif technique == 'TRIMAP':
                 result = run_trimap(st.session_state['data'], **params['trimap'])
-            else:
+            elif technique == 'PaCMAP':
                 result = run_pacmap(st.session_state['data'], **params['pacmap'])
 
             results[technique] = result
@@ -186,7 +186,6 @@ def load_page3():
     else:
         data_for_pca = st.session_state['data']
 
-    # Slider do wyboru liczby komponentów
     max_components = min(len(data_for_pca.columns), len(data_for_pca))
     n_components = st.slider("Number of Principal Components", min_value=1, max_value=max_components, value=min(3, max_components))
 
