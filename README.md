@@ -150,9 +150,6 @@ PaCMAP (Pairwise Controlled Manifold Approximation and Projection) Parameters
 * fp_ratio: Sets the balance of far-positive pairs in the objective function, crucial for defining how distant relationships affect the embedding's structure.
 
 
-## PCA Components Analysis
-
-
 ##  Optimization of Technique Parameters (Random Search)
 
 
