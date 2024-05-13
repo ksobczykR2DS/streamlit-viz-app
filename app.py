@@ -1,6 +1,6 @@
-from datautils import *
-from run_experiments_random import compute_cf_nn, compute_cf, perform_experiments
-from PCA_analysis import *
+from utils.datautils import *
+from utils.run_experiments_random import compute_cf_nn, compute_cf, perform_experiments
+from utils.PCA_analysis import *
 
 st.set_page_config(page_title="Multi-Page App", page_icon=":memo:")
 
