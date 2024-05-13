@@ -13,11 +13,9 @@ def load_page1():
     """)
 
     dataset_names = [
-        'Fashion-MNIST Dataset',
         'MNIST Dataset',
+        'Fashion-MNIST Dataset',
         'Scene Dataset',
-        'Dating Dataset',
-        'CIFAR-10 Dataset',
         'Upload Dataset'
     ]
 
@@ -74,7 +72,6 @@ def load_page2():
             }
             </style>
         """, unsafe_allow_html=True)
-
 
     st.title("Choose Technique and Parameters")
 
@@ -169,7 +166,6 @@ def load_page2():
 
         st.session_state['reduced_data'] = results
         st.success("Selected techniques executed successfully.")
-
 
 
 def load_page3():

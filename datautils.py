@@ -1,4 +1,3 @@
-
 import time
 import pandas as pd
 import numpy as np
@@ -36,10 +35,8 @@ def load_other_datasets(dataset_name, sample_percentage):
 
         dataset_functions = {
             'MNIST Dataset': lambda: get_mnist_dataset(sample_percentage),
-            'CIFAR-10 Dataset': lambda: get_cifar10_dataset(sample_percentage),
             'Fashion-MNIST Dataset': lambda: get_fashion_mnist_data(sample_percentage),
-            'Scene Dataset': lambda: get_scene_data(sample_percentage),
-            'Dating Dataset': lambda: get_dating_data(sample_percentage),
+            'Scene Dataset': lambda: get_scene_data(sample_percentage)
         }
 
         if dataset_name in dataset_functions:
@@ -57,10 +54,6 @@ def load_dataset(name):
         return get_fashion_mnist_data(100)
     elif name == 'Scene Dataset':
         return get_scene_data(100)
-    elif name == 'Dating Dataset':
-        return get_dating_data(100)
-    elif name == 'CIFAR-10 Dataset':
-        return get_cifar10_dataset(100)
     elif name == 'MNIST Dataset':
         return get_mnist_dataset(100)
 
@@ -98,11 +91,11 @@ def get_dataset_from_openml(dataset_id, sample_percentage):
             download_features_meta_data=True
         )
 
-    X, y, categorical_indicator, attribute_names = dataset.get_data(
+    x, y, categorical_indicator, attribute_names = dataset.get_data(
         target=dataset.default_target_attribute
     )
 
-    X_df = pd.DataFrame(X, columns=attribute_names)
+    x_df = pd.DataFrame(x, columns=attribute_names)
 
     if 'target' in attribute_names:
         y_series = pd.Series(y, name='target')
@@ -111,7 +104,7 @@ def get_dataset_from_openml(dataset_id, sample_percentage):
 
     if 0 < sample_percentage <= 100:
         sample_fraction = sample_percentage / 100.0
-        sampled_df = X_df.sample(frac=sample_fraction, random_state=42)
+        sampled_df = x_df.sample(frac=sample_fraction, random_state=42)
         sampled_labels = y_series[sampled_df.index]
 
         sampled_df.reset_index(drop=True, inplace=True)
@@ -126,19 +119,12 @@ def get_dataset_from_openml(dataset_id, sample_percentage):
         raise ValueError("Sample percentage must be between 0 and 100")
 
 
-def get_dating_data(sample_percentage):
-    return get_dataset_from_openml('1130', sample_percentage)
-
-
 def get_scene_data(sample_percentage):
     return get_dataset_from_openml('312', sample_percentage)
 
+
 def get_fashion_mnist_data(sample_percentage):
     return get_dataset_from_openml('40996', sample_percentage)
-
-
-def get_cifar10_dataset(sample_percentage):
-    return get_dataset_from_openml('43067', sample_percentage)
 
 
 def get_mnist_dataset(sample_percentage):
@@ -174,10 +160,6 @@ def handle_predefined_datasets(selected_dataset, sample_percentage):
             get_fashion_mnist_data(sample_percentage)
         elif selected_dataset == 'Scene Dataset':
             get_scene_data(sample_percentage)
-        elif selected_dataset == 'Dating Dataset':
-            get_dating_data(sample_percentage)
-        elif selected_dataset == 'CIFAR-10 Dataset':
-            get_cifar10_dataset(sample_percentage)
         elif selected_dataset == 'MNIST Dataset':
             get_mnist_dataset(sample_percentage)
         else:
@@ -299,5 +281,3 @@ def visualize_individual_result(data, result, labels, title="Result Visualizatio
     fig.update_traces(marker=dict(size=5, opacity=0.8, line=dict(width=0.5, color='DarkSlateGrey')))
 
     st.plotly_chart(fig, use_container_width=True)
-
-
