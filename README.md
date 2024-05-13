@@ -33,7 +33,82 @@ Once the container is running, open a web browser and visit http://localhost:850
 
 ---
 
-# Characteristics of Used Techniques and Their Parameters
+
+# Project Overview
+
+1. **Load Dataset**
+
+![img.png](img.png)
+Introduction
+
+The initial page of our web application focuses on dataset loading and visualization, offering options to either choose from predefined datasets (e.g., MNIST, Fashion-MNIST, Scene Dataset) or upload custom datasets in CSV, XLSX, or XLS formats.
+Custom 
+
+Dataset Uploading
+
+A user-friendly upload interface is activated when the "Upload Dataset" option is selected. This allows users to bring their specific data into the application for analysis.
+
+Data Sampling
+
+The application features a sampling slider, enabling users to specify the percentage of the dataset to load (ranging from 1% to 100%). This functionality is essential for handling large datasets efficiently by adjusting the sample size according to system capabilities or analytical needs.
+
+Data Preview
+
+After dataset selection and loading, the application displays a preview of the first few rows. Users can further explore the data through a feature distribution visualization option, which provides insights into the selected data column.
+
+![img_1.png](img_1.png)
+
+2. **Techniques Set Up and Visualization**
+
+The second page of our web application focuses on the selection of dimensionality reduction techniques and the customization of their respective parameters. This allows users to tailor the data analysis process according to their specific needs and dataset characteristics.
+
+![img_3.png](img_3.png)
+
+Visual Feedback on Dataset Loading
+
+At the beginning of the page, users receive visual confirmation of the dataset currently loaded, displayed prominently in a styled box. This feedback ensures that users are aware of the data context as they proceed with technique selection and parameter tuning.
+
+Selection of Dimensionality Reduction Techniques
+
+The page provides an expandable interface where users can select from multiple dimensionality reduction techniques: t-SNE, UMAP, TRIMAP, and PaCMAP. Each technique section offers a brief description and the option to activate the technique for the current session.
+
+![img_2.png](img_2.png)
+
+3. **PCA Components Analysis**
+
+The third page of our application is dedicated to the Principal Component Analysis (PCA), enabling users to perform and visualize PCA on datasets they have loaded and configured. This page is structured to guide users through a systematic analysis, offering options for detailed component exploration and data visualization.
+
+Feature Selection for PCA
+
+Users can choose to perform PCA using all features of the dataset or select specific features. A checkbox activates a multi-select dropdown menu where specific features can be chosen. This flexibility allows for focused analysis on relevant features, potentially improving the clarity and relevance of the PCA results.
+PCA Configuration
+
+A slider allows users to choose the number of principal components they wish to analyze, with the maximum limit set by the smaller of the number of features or the number of data points to ensure a valid PCA computation.
+PCA Execution and Visualization Options
+
+Three checkboxes provide users with options to visualize different aspects of PCA:
+
+* PCA Plot: Depending on the number of components selected (two or three), a 2D or 3D PCA plot is generated, providing a visual representation of data spread in the principal component space. 
+
+![img_4.png](img_4.png)
+
+* Explained Variance Plot: This plot shows the proportion of the dataset’s variance that each principal component accounts for, helping users understand the importance of each component. 
+
+![img_5.png](img_5.png)
+
+* Loadings Heatmap: A heatmap of PCA loadings can be generated, which is useful for identifying which variables contribute most to each principal component.
+
+
+4. **Technique Tuning with RandomSearch**
+
+
+## Result Interpretation
+
+
+---
+# DETAILS
+
+## Characteristics of Used Techniques and Their Parameters
 
 **t-SNE** (t-Distributed Stochastic Neighbor Embedding) is a technique that converts similarities between data points into joint probabilities and then minimizes the Kullback-Leibler divergence between these probabilities in both the high-dimensional and low-dimensional spaces. This makes it exceptionally good at creating a two- or three-dimensional map of datasets, revealing intrinsic patterns such as clusters. t-SNE is particularly sensitive to local structure and has a tendency to create distinct groups or clusters, making it useful for visualizing clusters of high-dimensional data.
 
@@ -73,21 +148,12 @@ PaCMAP (Pairwise Controlled Manifold Approximation and Projection) Parameters
 * mn_ratio: Controls the ratio of medium-near to medium-far point pairs, adjusting the local versus global emphasis in the embedding. 
 * fp_ratio: Sets the balance of far-positive pairs in the objective function, crucial for defining how distant relationships affect the embedding's structure.
 
-# Omówienie każdej ze stron + skriny
-
 
 ## PCA Components Analysis
 
 
-## Opis możliwości interpretacji wyniku
+##  Optimization of Technique Parameters (Random Search)
 
 
-## Technique Parameters Optimization
-
-
-## Opis działania użytej metryki
-
-
-
-
+## Description of the Used Metric
 
