@@ -54,6 +54,8 @@ techniques_params = {
 def perform_experiments(dataset, labels, technique_names_list, n_iter=10, verbose=False):
     if verbose:
         st.write('Loading techniques...')
+    dataset = np.array(dataset, dtype=np.float64)
+
     x_train, x_test, y_train, y_test = train_test_split(dataset, labels, test_size=0.2, random_state=42)
 
     results = []

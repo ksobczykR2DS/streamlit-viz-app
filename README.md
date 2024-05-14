@@ -167,5 +167,44 @@ Three checkboxes provide users with options to visualize different aspects of PC
 
 ##  Optimization of Technique Parameters (Random Search)
 
-## Description of the Used Metric
+Random Search Hyperparameter Optimization
 
+![img.png](resources/img_9.png)
+
+**Methodology:**
+To begin, we define the range of possible values for each hyperparameter involved in the process. For t-SNE, important parameters include the number of iterations, learning rate, and perplexity, while for UMAP, we consider the number of neighbors, the distance metric, and the number of components. Following the establishment of these ranges, Random Search is employed to select hyperparameter combinations randomly. This method allows us to explore the hyperparameter space more broadly and randomly compared to traditional grid searches, potentially leading to better and more diverse solutions.
+
+Each combination of hyperparameters is then applied to perform dimension reduction and visualization, and the outcomes are evaluated based on metrics that reflect the quality of visualization, including clarity, cluster separation, and the preservation of both local and global structures within the data.
+
+## Description of the Used Metric (Conformity Fraction)
+
+In our project focusing on dimension reduction and visualization, we employ the metric compute_cf to evaluate the conformity of data points with their nearest neighbors. This metric is derived from the results of compute_cf_nn, which computes the fraction of nearest neighbors that share the same label as the given data point.
+
+```python
+def compute_cf_nn(data_2d, labels, nn_max=100):
+    data_2d = np.asarray(data_2d, dtype=np.float64)
+    nbrs = NearestNeighbors(n_neighbors=nn_max, algorithm='auto').fit(data_2d)
+    distances, indices = nbrs.kneighbors(data_2d)
+
+    cf_nn_values = []
+    for i in range(len(data_2d)):
+        label = labels[i]
+        neighbors_labels = labels[indices[i]]
+        cf_nn = np.sum(neighbors_labels == label) / nn_max
+        cf_nn_values.append(cf_nn)
+
+    return np.array(cf_nn_values)
+
+
+def compute_cf(cf_nn_values):
+    return np.mean(cf_nn_values)
+```
+
+Result Interpretation
+
+The result from compute_cf offers a quantifiable measure of how well clusters formed by the dimension reduction techniques (like t-SNE and UMAP) align with the actual labels of the data points. A higher compute_cf value indicates that, on average, data points are surrounded by neighbors with the same labels, suggesting effective clustering and meaningful dimensionality reduction.
+
+
+Interpretation Scenarios:
+* High compute_cf Value: This suggests that the dimension reduction technique has successfully grouped similar items (as per their labels) together. It indicates that the local neighborhoods are label-homogeneous, which is often desired in clustering scenarios.
+* Low compute_cf Value: Conversely, a lower value might indicate that the dimension reduction has not preserved label neighborhoods well. This could be a signal to adjust hyperparameters or reconsider the suitability of the chosen method for the specific type of data.
