@@ -4,7 +4,7 @@ This project presents an interactive application tailored for advanced data visu
 Designed to cater to both beginners and experts in data science, the app offers robust functionality including data loading, dynamic visualization through real-time adjustments, data sampling, and the evaluation of various quality metrics. 
 These features empower users to explore complex datasets comprehensively, providing insightful visual representations that facilitate better understanding and analysis of the data's underlying structure and relationships.
 
-Authors: Kacper Sobczyk, Katarzyna Główczyk
+Authors: Kacper Sobczyk, Katarzyna Główczyk, Sebastian Hec
 
 ---
 
