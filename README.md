@@ -104,35 +104,23 @@ Three checkboxes provide users with options to visualize different aspects of PC
 4. **Technique Tuning with RandomSearch**
 
 
-## Result Interpretation
+# Result Interpretation
 
-### Cluster Formation
+## Cluster Formation
 - **Observation**: Clusters of data points in a 2D or 3D PCA scatter plot.
 - **Interpretation**: Clusters indicate that PCA has successfully reduced the dimensionality of the data while preserving the variance. Each cluster may represent a different group, category, or class within the data. This can be useful for identifying natural groupings and patterns.
 
-### Outliers Detection
+## Outliers Detection
 - **Observation**: Data points that are distant from the main clusters in the scatter plot.
 - **Interpretation**: These points can be considered outliers, indicating observations that significantly differ from the majority of the data. Identifying outliers is crucial for understanding the dataset's variability and can inform data cleaning and preprocessing steps.
 
-### Class Overlap
+## Class Overlap
 - **Observation**: Overlapping clusters in the PCA plot.
 - **Interpretation**: Overlap between clusters suggests that some classes or groups are not completely separable in the reduced dimensional space. This might imply that there are similarities between these groups or that the features used do not completely differentiate between them.
 
-### Explained Variance
+## Explained Variance (Components Analysis)
 - **Observation**: Bar plot showing the explained variance of each principal component, often accompanied by a cumulative variance line plot.
 - **Interpretation**: The explained variance plot shows how much variance each principal component captures. A steep rise at the beginning indicates that the first few components capture most of the variance, making them the most informative. The cumulative variance plot helps determine how many components are needed to capture a desired amount of total variance, indicating the effectiveness of the dimensionality reduction.
-
-### Component Loadings
-- **Observation**: Heatmap or bar plot showing the loadings (contributions) of each original feature to the principal components.
-- **Interpretation**: Features with high absolute loading values are more influential in forming the principal components. This helps identify the most important variables in the dataset. For example, a heatmap can reveal which features contribute the most to each component, aiding in feature selection and understanding the underlying structure.
-
-### Statistical Description
-- **Observation**: Summary statistics (mean, standard deviation, min, max, etc.) of the PCA components.
-- **Interpretation**: Descriptive statistics provide insights into the distribution of the data in the reduced space. This helps understand the central tendency and variability of the transformed data, which can be useful for further analysis or model building.
-
-### Correlation Analysis
-- **Observation**: Correlation matrix of the PCA components.
-- **Interpretation**: The correlation matrix helps understand the linear relationships between the components. High correlation values between components might indicate redundancy, whereas low correlation values suggest that the components capture different aspects of the data's variability. This is useful for evaluating the effectiveness of the PCA in reducing dimensionality without losing important information.
 
 ---
 # DETAILS
@@ -177,26 +165,7 @@ Three checkboxes provide users with options to visualize different aspects of PC
 * mn_ratio: Controls the ratio of medium-near to medium-far point pairs, adjusting the local versus global emphasis in the embedding. 
 * fp_ratio: Sets the balance of far-positive pairs in the objective function, crucial for defining how distant relationships affect the embedding's structure.
 
-
 ##  Optimization of Technique Parameters (Random Search)
 
 ## Description of the Used Metric
-
-![img_6.png](resources/img_6.png)
-
-### Euclidean Distance
-The Euclidean distance, also known as the L2 distance, is used to determine the natural distance between two points in a Euclidean space. It is calculated as the square root of the sum of the squares of the differences between corresponding coordinates of the points. For two points A and B in an n-dimensional space, the formula is: d(A, B) = sqrt((A1 - B1)^2 + (A2 - B2)^2 + ... + (An - Bn)^2).
-
-### Cosine Similarity
-Cosine similarity measures the cosine of the angle between two vectors in a multi-dimensional space, disregarding their magnitude. This measure is used in applications such as text analysis, focusing on the direction rather than the length of the vectors. The formula to calculate the similarity between two vectors A and B is: similarity(A, B) = (A . B) / (||A|| * ||B||), where A . B is the dot product of the vectors, and ||A|| and ||B|| are the norms of these vectors.
-
-### Manhattan Distance
-The Manhattan distance, also known as the L1 distance or city block distance, measures the total sum of the absolute differences between the coordinates of two points. It is often used in grid-like path calculations, such as in city road networks. For two points A and B in an n-dimensional space, the Manhattan distance is calculated as: d(A, B) = |A1 - B1| + |A2 - B2| + ... + |An - Bn|.
-
-### Chebyshev Distance
-The Chebyshev distance, also known as the chessboard distance or infinity norm (L∞), measures the maximum absolute difference between the coordinates of two points in multi-dimensional space. It is particularly useful in applications where movements along grid axes and diagonals are allowed, such as in a chess game where the king can move exactly one square in any direction (vertical, horizontal, or diagonal). For two points A and B in an n-dimensional space, the Chebyshev distance is defined as the maximum of the absolute differences of their corresponding coordinates. In simpler terms, it can be expressed as:
-
-Chebyshev distance between points A and B = max(|A1 - B1|, |A2 - B2|, ..., |An - Bn|)
-
-
 
