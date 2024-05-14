@@ -39,10 +39,12 @@ def load_page1():
     )
 
     if st.button("Load Dataset", key='load_selected_dataset'):
-        if selected_dataset == "Upload Dataset" and uploaded_file is not None:
+        if selected_dataset == "Your Custom Dataset" and uploaded_file:
             load_uploaded_data(uploaded_file, sample_percentage)
-        elif selected_dataset != "Upload Dataset":
+        elif selected_dataset != "Your Custom Dataset":
             load_other_datasets(selected_dataset, sample_percentage)
+        else:
+            st.error("Please upload a file or select a predefined dataset.")
 
     if 'data' in st.session_state and st.session_state.get('dataset_loaded', False):
         st.subheader("Preview of loaded data")

@@ -16,19 +16,23 @@ import matplotlib.pyplot as plt
 def load_uploaded_data(uploaded_file, sample_percentage):
     try:
         my_bar = st.progress(0)
-        for percent_complete in range(100):
-            my_bar.progress(percent_complete + 1)
+        my_bar.progress(10)
+
         handle_uploaded_file(uploaded_file, sample_percentage)
+        my_bar.progress(50)
+
+        my_bar.progress(100)
         st.success("Dataset loaded successfully!")
+        my_bar = st.empty()
     except Exception as e:
         st.error(f"Error loading data: {e}")
+        my_bar = st.empty()
 
 
 def load_other_datasets(dataset_name, sample_percentage):
     try:
         my_bar = st.progress(0)
-        for percent_complete in range(100):
-            my_bar.progress(percent_complete + 1)
+        my_bar.progress(10)
 
         dataset_functions = {
             'MNIST Handwritten Digits': lambda: get_mnist_dataset(sample_percentage),
@@ -42,9 +46,18 @@ def load_other_datasets(dataset_name, sample_percentage):
             st.session_state['labels'] = labels
             st.session_state['dataset_name'] = dataset_name
             st.session_state['dataset_loaded'] = True
+
+            my_bar.progress(100)
+            st.success("Dataset loaded successfully!")
+            my_bar = st.empty()
+
+        else:
+            st.error("Selected dataset is not configured correctly.")
+            my_bar.empty()
+
     except Exception as e:
         st.error(f"Error loading data: {e}")
-
+        my_bar.empty()
 
 def plot_distribution(selected_column):
     fig, ax = plt.subplots()
@@ -53,8 +66,13 @@ def plot_distribution(selected_column):
 
 
 def handle_uploaded_file(uploaded_file, sample_percentage):
-    df = pd.read_csv(uploaded_file)
-    df.rename(columns={df.columns[-1]: 'target'}, inplace=True)
+    if uploaded_file.name.endswith('.csv'):
+        df = pd.read_csv(uploaded_file)
+    elif uploaded_file.name.endswith(('.xlsx', '.xls')):
+        df = pd.read_excel(uploaded_file)
+    else:
+        st.error("Unsupported file format. Please upload a CSV or Excel file.")
+        return
 
     if df.iloc[:, :-1].select_dtypes(include=[np.number]).shape[1] != df.shape[1] - 1:
         raise ValueError("All columns except the last must be numeric.")
@@ -66,7 +84,6 @@ def handle_uploaded_file(uploaded_file, sample_percentage):
     st.session_state['data'] = sampled_data
     st.session_state['labels'] = sampled_labels
     st.session_state['dataset_loaded'] = True
-
     st.session_state['uploaded_file_name'] = uploaded_file.name
 
 
