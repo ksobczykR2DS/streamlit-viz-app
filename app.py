@@ -196,15 +196,25 @@ def load_page3():
         data_for_pca = st.session_state['data']
 
     max_components = min(len(data_for_pca.columns), len(data_for_pca))
-    n_components = st.slider("Number of Principal Components", min_value=1, max_value=max_components, value=min(3, max_components))
+    n_components = st.slider("Number of Principal Components", min_value=1, max_value=max_components,
+                             value=min(3, max_components))
+
+    pca_type = st.radio("Choose PCA Type", options=["Standard PCA", "Kernel PCA"])
+
+    if pca_type == "Kernel PCA":
+        kernel = st.selectbox("Choose Kernel", options=["linear", "poly", "rbf", "sigmoid", "cosine"])
 
     run_pca = st.checkbox("📊 Show PCA Plot", value=False)
     run_explained_variance = st.checkbox("📈 Show Explained Variance Plot", value=False)
     run_loadings_heatmap = st.checkbox("🔥 Show Loadings Heatmap", value=False)
 
     if st.button("Run Selected PCA Analyses"):
-        with st.spinner(f"Performing PCA with {n_components} components..."):
-            components, variance_ratio = perform_pca(data_for_pca, n_components)
+        with st.spinner(f"Performing {pca_type} with {n_components} components..."):
+            if pca_type == "Kernel PCA":
+                components, variance_ratio = perform_kernel_pca(data_for_pca, n_components, kernel)
+            else:
+                components, variance_ratio = perform_pca(data_for_pca, n_components)
+
             st.session_state['components'] = components
             st.session_state['variance_ratio'] = variance_ratio
             st.session_state['analysis_performed'] = True

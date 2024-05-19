@@ -5,12 +5,20 @@ from sklearn.decomposition import PCA
 import plotly.graph_objects as go
 import io
 import plotly.express as px
+from sklearn.decomposition import KernelPCA
 
 
 def perform_pca(data, n_components=3):
     pca = PCA(n_components=n_components)
     components = pca.fit_transform(data)
     return components, pca.explained_variance_ratio_
+
+
+def perform_kernel_pca(data, n_components, kernel):
+    kpca = KernelPCA(n_components=n_components, kernel=kernel)
+    components = kpca.fit_transform(data)
+    variance_ratio = [1] * n_components
+    return components, variance_ratio
 
 
 def plot_pca(components, labels=None):

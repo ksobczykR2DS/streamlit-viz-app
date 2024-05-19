@@ -243,8 +243,9 @@ def run_pacmap(dataset, n_neighbors=50, mn_ratio=0.5, fp_ratio=2.0):
 def visualize_individual_result(data, result, labels, title="Result Visualization"):
     result_df = pd.DataFrame(result, columns=['Component 1', 'Component 2'])
     result_df['Label'] = labels
+    result_df['ID'] = data.index
 
-    fig = px.scatter(result_df, x='Component 1', y='Component 2', color='Label', title=title)
+    fig = px.scatter(result_df, x='Component 1', y='Component 2', color='Label', title=title, hover_data=['ID'])
     fig.update_traces(marker=dict(size=5, opacity=0.8, line=dict(width=0.5, color='DarkSlateGrey')))
 
     st.plotly_chart(fig, use_container_width=True)
