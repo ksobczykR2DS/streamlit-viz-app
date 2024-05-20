@@ -171,8 +171,7 @@ def load_page2():
             results[technique] = result
             if result is not None:
                 st.session_state[f'{technique}_result'] = result
-                visualize_individual_result(data=st.session_state['data'], result=result,
-                                            labels=st.session_state['labels'], title=f'{technique} Result')
+                visualize_individual_result(data=st.session_state['data'], result=result, labels=st.session_state['labels'], title=f'{technique} Result')
                 cf_nn_values = compute_cf_nn(result, st.session_state['labels'])
                 cf_scores[technique] = compute_cf(cf_nn_values)
                 st.write(f"{technique} CF Score: {cf_scores[technique]:.4f}")
@@ -180,20 +179,24 @@ def load_page2():
         st.session_state['reduced_data'] = results
         st.success("Selected techniques executed successfully.")
 
+
     if 'reduced_data' in st.session_state and st.session_state['reduced_data']:
+
         if st.checkbox("Show Image by ID"):
+            for technique in techniques:
+                if f'{technique}_result' in st.session_state:
+                    result = st.session_state[f'{technique}_result']
+                    visualize_individual_result(data=st.session_state['data'], result=result,
+                                                labels=st.session_state['labels'], title=f'{technique} Result')
             id_input = st.text_input("Enter ID:")
             if id_input:
                 try:
                     id_value = int(id_input)
-                    if 'images' in st.session_state and st.session_state['images'] is not None:
-                        if 0 <= id_value < len(st.session_state['images']):
-                            fig = get_image_by_id(id_value)
-                            st.pyplot(fig)
-                        else:
-                            st.error("ID not found in the dataset.")
+                    if 0 <= id_value < len(st.session_state['images']):
+                        fig = get_image_by_id(id_value)
+                        st.pyplot(fig)
                     else:
-                        st.error("No images available for the dataset.")
+                        st.error("ID not found in the dataset.")
                 except ValueError:
                     st.error("Please enter a valid numeric ID.")
 
@@ -229,7 +232,7 @@ def load_page3():
     pca_type = st.radio("Choose PCA Type", options=["Standard PCA", "Kernel PCA"])
 
     if pca_type == "Kernel PCA":
-        kernel = st.selectbox("Choose Kernel", options=["linear", "poly", "rbf", "sigmoid", "cosine"])
+        kernel = st.selectbox("Choose Kernel", options=["poly", "rbf", "sigmoid", "cosine"])
 
     run_pca = st.checkbox("📊 Show PCA Plot", value=False)
     run_explained_variance = st.checkbox("📈 Show Explained Variance Plot", value=False)
