@@ -57,30 +57,32 @@ def load_page1():
     st.write("Press 'R' to reset the application if something goes wrong.")
 
 
+
+
 def load_page2():
     st.markdown("""
-            <style>
-            .info-text {
-                padding: 10px;
-                font-size: 16px;
-                background-color: #f9f9f9;
-                border-left: 5px solid #4CAF50;
-                margin: 10px 0px;
-                border-radius: 5px;
-            }
-            .params-header {
-                margin-top: 15px;
-                font-weight: bold;
-            }
-            .loaded-dataset {
-                font-size: 24px;  /* Zmniejszony rozmiar czcionki */
-                text-align: center;  /* Wyrównanie tekstu do środka */
-                color: #4CAF50;  /* Kolor tekstu */
-                padding: 10px 0;  /* Dodatkowy padding górny i dolny dla lepszego wyglądu */
-                width: 100%;  /* Zapewnia, że tekst jest centrowany w pełnej szerokości */
-            }
-            </style>
-        """, unsafe_allow_html=True)
+        <style>
+        .info-text {
+            padding: 10px;
+            font-size: 16px;
+            background-color: #f9f9f9;
+            border-left: 5px solid #4CAF50;
+            margin: 10px 0px;
+            border-radius: 5px;
+        }
+        .params-header {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .loaded-dataset {
+            font-size: 24px;
+            text-align: center;
+            color: #4CAF50;
+            padding: 10px 0;
+            width: 100%;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
     st.title("Choose Technique and Parameters")
 
@@ -168,7 +170,9 @@ def load_page2():
 
             results[technique] = result
             if result is not None:
-                visualize_individual_result(data=st.session_state['data'], result=result, labels=st.session_state['labels'], title=f'{technique} Result')
+                st.session_state[f'{technique}_result'] = result
+                visualize_individual_result(data=st.session_state['data'], result=result,
+                                            labels=st.session_state['labels'], title=f'{technique} Result')
                 cf_nn_values = compute_cf_nn(result, st.session_state['labels'])
                 cf_scores[technique] = compute_cf(cf_nn_values)
                 st.write(f"{technique} CF Score: {cf_scores[technique]:.4f}")
@@ -176,6 +180,29 @@ def load_page2():
         st.session_state['reduced_data'] = results
         st.success("Selected techniques executed successfully.")
 
+    if 'reduced_data' in st.session_state and st.session_state['reduced_data']:
+        if st.checkbox("Show Image by ID"):
+            id_input = st.text_input("Enter ID:")
+            if id_input:
+                try:
+                    id_value = int(id_input)
+                    if 'images' in st.session_state and st.session_state['images'] is not None:
+                        if 0 <= id_value < len(st.session_state['images']):
+                            fig = get_image_by_id(id_value)
+                            st.pyplot(fig)
+                        else:
+                            st.error("ID not found in the dataset.")
+                    else:
+                        st.error("No images available for the dataset.")
+                except ValueError:
+                    st.error("Please enter a valid numeric ID.")
+
+    if st.button("Reset"):
+        keys_to_remove = ['reduced_data', 't-SNE_result', 'UMAP_result', 'TRIMAP_result', 'PaCMAP_result']
+        for key in keys_to_remove:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.experimental_rerun()
 
 def load_page3():
     st.title("PCA Components Analysis")

@@ -10,6 +10,9 @@ import openml
 import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
+from PIL import Image
+import base64
+import io
 
 
 # PAGE 1 UTILS
@@ -41,20 +44,19 @@ def load_other_datasets(dataset_name, sample_percentage):
         }
 
         if dataset_name in dataset_functions:
-            data, labels = dataset_functions[dataset_name]()
+            (data, images), labels = dataset_functions[dataset_name]()
             st.session_state['data'] = data
             st.session_state['labels'] = labels
+            st.session_state['images'] = images
             st.session_state['dataset_name'] = dataset_name
             st.session_state['dataset_loaded'] = True
 
             my_bar.progress(100)
             st.success("Dataset loaded successfully!")
             my_bar = st.empty()
-
         else:
             st.error("Selected dataset is not configured correctly.")
             my_bar.empty()
-
     except Exception as e:
         st.error(f"Error loading data: {e}")
         my_bar.empty()
@@ -125,18 +127,78 @@ def get_dataset_from_openml(dataset_id, sample_percentage):
 
 
 def get_scene_data(sample_percentage):
-    return get_dataset_from_openml('312', sample_percentage)
+    scene_data = openml.datasets.get_dataset(312)
+    x, y, _, _ = scene_data.get_data(target=scene_data.default_target_attribute)
+    x = np.array(x)
+    y = np.array(y)
+
+    st.write(f"Shape of the dataset: {x.shape}")
+    st.write(f"First row data example: {x[0]}")
+    st.write(f"Total number of elements in each image: {x.shape[1]}")
+
+    x_df = pd.DataFrame(x)
+    y_series = pd.Series(y)
+
+    if 0 < sample_percentage <= 100:
+        sample_fraction = sample_percentage / 100.0
+        sampled_df = x_df.sample(frac=sample_fraction, random_state=42)
+        sampled_labels = y_series[sampled_df.index]
+
+        sampled_df.reset_index(drop=True, inplace=True)
+        sampled_labels.reset_index(drop=True, inplace=True)
+
+        return (sampled_df, None), sampled_labels
+    else:
+        raise ValueError("Sample percentage must be between 0 and 100")
 
 
 def get_fashion_mnist_data(sample_percentage):
-    return get_dataset_from_openml('40996', sample_percentage)
+    mnist = openml.datasets.get_dataset(40996)
+    x, y, _, _ = mnist.get_data(target=mnist.default_target_attribute)
+    x = np.array(x)
+    y = np.array(y)
+    images = x.reshape((-1, 28, 28))
+    x_df = pd.DataFrame(x)
+    y_series = pd.Series(y)
+
+    if 0 < sample_percentage <= 100:
+        sample_fraction = sample_percentage / 100.0
+        sampled_df = x_df.sample(frac=sample_fraction, random_state=42)
+        sampled_labels = y_series[sampled_df.index]
+        sampled_images = images[sampled_df.index]
+
+        sampled_df.reset_index(drop=True, inplace=True)
+        sampled_labels.reset_index(drop=True, inplace=True)
+
+        return (sampled_df, sampled_images), sampled_labels
+    else:
+        raise ValueError("Sample percentage must be between 0 and 100")
 
 
 def get_mnist_dataset(sample_percentage):
-    return get_dataset_from_openml('554', sample_percentage)
+    mnist = openml.datasets.get_dataset(554)
+    x, y, _, _ = mnist.get_data(target=mnist.default_target_attribute)
+    x = np.array(x)
+    y = np.array(y)
+    images = x.reshape((-1, 28, 28))
+    x_df = pd.DataFrame(x)
+    y_series = pd.Series(y)
+
+    if 0 < sample_percentage <= 100:
+        sample_fraction = sample_percentage / 100.0
+        sampled_df = x_df.sample(frac=sample_fraction, random_state=42)
+        sampled_labels = y_series[sampled_df.index]
+        sampled_images = images[sampled_df.index]
+
+        sampled_df.reset_index(drop=True, inplace=True)
+        sampled_labels.reset_index(drop=True, inplace=True)
+
+        return (sampled_df, sampled_images), sampled_labels
+    else:
+        raise ValueError("Sample percentage must be between 0 and 100")
 
 
-# PAGE 2 UTILS
+
 def convert_and_scale_dataset(dataset):
     if isinstance(dataset, pd.DataFrame):
         return dataset.values
@@ -239,6 +301,12 @@ def run_pacmap(dataset, n_neighbors=50, mn_ratio=0.5, fp_ratio=2.0):
             st.error(f"An error occurred while running PaCMAP: {str(e)}")
             return None
 
+def get_image_by_id(id):
+    image = st.session_state['images'][id]
+    fig, ax = plt.subplots()
+    ax.imshow(image, cmap='gray')
+    ax.axis('off')
+    return fig
 
 def visualize_individual_result(data, result, labels, title="Result Visualization"):
     result_df = pd.DataFrame(result, columns=['Component 1', 'Component 2'])
@@ -248,4 +316,10 @@ def visualize_individual_result(data, result, labels, title="Result Visualizatio
     fig = px.scatter(result_df, x='Component 1', y='Component 2', color='Label', title=title, hover_data=['ID'])
     fig.update_traces(marker=dict(size=5, opacity=0.8, line=dict(width=0.5, color='DarkSlateGrey')))
 
+    fig.update_layout(clickmode='event+select')
+
     st.plotly_chart(fig, use_container_width=True)
+
+    return fig
+
+
