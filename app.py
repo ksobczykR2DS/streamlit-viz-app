@@ -56,9 +56,6 @@ def load_page1():
 
     st.write("Press 'R' to reset the application if something goes wrong.")
 
-
-
-
 def load_page2():
     st.markdown("""
         <style>
@@ -94,6 +91,11 @@ def load_page2():
         st.markdown(f"<div class='loaded-dataset'>Loaded Dataset: {dataset_name}</div>", unsafe_allow_html=True)
     else:
         st.markdown(f"<div class='loaded-dataset'>No dataset or file uploaded</div>", unsafe_allow_html=True)
+
+    show_image_by_id_option = st.radio(
+        "Do you want to search for images by ID?",
+        ("No", "Yes")
+    )
 
     params = {}
     techniques = []
@@ -179,26 +181,21 @@ def load_page2():
         st.session_state['reduced_data'] = results
         st.success("Selected techniques executed successfully.")
 
-
-    if 'reduced_data' in st.session_state and st.session_state['reduced_data']:
-
-        if st.checkbox("Show Image by ID"):
-            for technique in techniques:
-                if f'{technique}_result' in st.session_state:
-                    result = st.session_state[f'{technique}_result']
-                    visualize_individual_result(data=st.session_state['data'], result=result,
-                                                labels=st.session_state['labels'], title=f'{technique} Result')
-            id_input = st.text_input("Enter ID:")
-            if id_input:
+    if 'reduced_data' in st.session_state and st.session_state['reduced_data'] and show_image_by_id_option == "Yes":
+        st.markdown("### Enter IDs to view images")
+        id_input = st.text_area("Enter IDs (comma-separated):")
+        if id_input:
+            ids = id_input.split(",")
+            for id_value in ids:
                 try:
-                    id_value = int(id_input)
+                    id_value = int(id_value.strip())
                     if 0 <= id_value < len(st.session_state['images']):
                         fig = get_image_by_id(id_value)
                         st.pyplot(fig)
                     else:
-                        st.error("ID not found in the dataset.")
+                        st.error(f"ID {id_value} not found in the dataset.")
                 except ValueError:
-                    st.error("Please enter a valid numeric ID.")
+                    st.error(f"Please enter a valid numeric ID. Invalid input: {id_value}")
 
     if st.button("Reset"):
         keys_to_remove = ['reduced_data', 't-SNE_result', 'UMAP_result', 'TRIMAP_result', 'PaCMAP_result']
@@ -206,6 +203,8 @@ def load_page2():
             if key in st.session_state:
                 del st.session_state[key]
         st.experimental_rerun()
+
+
 
 def load_page3():
     st.title("PCA Components Analysis")
