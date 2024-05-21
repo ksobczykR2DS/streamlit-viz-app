@@ -204,7 +204,7 @@ def load_page3():
         data_for_pca = st.session_state['data']
 
     max_components = min(len(data_for_pca.columns), len(data_for_pca))
-    n_components = st.slider("Number of Principal Components", min_value=1, max_value=max_components,
+    n_components = st.slider("Number of Principal Components", min_value=2, max_value=max_components,
                              value=min(3, max_components))
 
     pca_type = st.radio("Choose PCA Type", options=["Standard PCA", "Kernel PCA"])
