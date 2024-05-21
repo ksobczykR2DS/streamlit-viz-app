@@ -236,9 +236,9 @@ def load_page3():
 
             if run_pca:
                 if n_components == 2:
-                    plot_pca(components, labels=st.session_state.get('labels'))
+                    plot_pca(components, labels=st.session_state.get('labels'), data_index=data_for_pca.index)
                 elif n_components > 2:
-                    plot_pca_3d(components, labels=st.session_state.get('labels'))
+                    plot_pca_3d(components, labels=st.session_state.get('labels'), data_index=data_for_pca.index)
 
             if run_explained_variance:
                 plot_explained_variance(variance_ratio)

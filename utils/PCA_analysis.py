@@ -21,17 +21,46 @@ def perform_kernel_pca(data, n_components, kernel):
     return components, variance_ratio
 
 
-def plot_pca(components, labels=None):
-    fig = px.scatter(x=components[:, 0], y=components[:, 1], color=labels, labels={'x': 'Principal Component 1', 'y': 'Principal Component 2'})
-    fig.update_layout(title="PCA Components Analysis", xaxis_title="PC1", yaxis_title="PC2")
+# def plot_pca(components, labels=None):
+#     fig = px.scatter(x=components[:, 0], y=components[:, 1], color=labels, labels={'x': 'Principal Component 1', 'y': 'Principal Component 2'})
+#     fig.update_layout(title="PCA Components Analysis", xaxis_title="PC1", yaxis_title="PC2")
+#     st.plotly_chart(fig, use_container_width=True)
+#
+#
+# def plot_pca_3d(components, labels=None):
+#     df = pd.DataFrame(components, columns=[f'PC{i+1}' for i in range(components.shape[1])])
+#     if labels is not None:
+#         df['Label'] = labels
+#     fig = px.scatter_3d(df, x='PC1', y='PC2', z='PC3', color='Label', title="3D PCA Visualization")
+#     fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
+#     st.plotly_chart(fig, use_container_width=True)
+
+def plot_pca(components, labels=None, data_index=None):
+    df = pd.DataFrame(components, columns=['Principal Component 1', 'Principal Component 2'])
+    if labels is not None:
+        df['Label'] = labels
+    if data_index is not None:
+        df['ID'] = data_index
+
+    hover_data = ['ID'] if 'ID' in df.columns else None
+    fig = px.scatter(df, x='Principal Component 1', y='Principal Component 2', color='Label',
+                     hover_data=hover_data, title="PCA Components Analysis")
+    fig.update_traces(marker=dict(size=5, opacity=0.8, line=dict(width=0.5, color='DarkSlateGrey')))
+    fig.update_layout(clickmode='event+select')
     st.plotly_chart(fig, use_container_width=True)
 
 
-def plot_pca_3d(components, labels=None):
+def plot_pca_3d(components, labels=None, data_index=None):
     df = pd.DataFrame(components, columns=[f'PC{i+1}' for i in range(components.shape[1])])
     if labels is not None:
         df['Label'] = labels
-    fig = px.scatter_3d(df, x='PC1', y='PC2', z='PC3', color='Label', title="3D PCA Visualization")
+    if data_index is not None:
+        df['ID'] = data_index
+
+    hover_data = ['ID'] if 'ID' in df.columns else None
+    fig = px.scatter_3d(df, x='PC1', y='PC2', z='PC3', color='Label',
+                        hover_data=hover_data, title="3D PCA Visualization")
+    fig.update_traces(marker=dict(size=5, opacity=0.8, line=dict(width=0.5, color='DarkSlateGrey')))
     fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
     st.plotly_chart(fig, use_container_width=True)
 
