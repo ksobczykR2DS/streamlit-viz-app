@@ -207,10 +207,16 @@ def load_page3():
     n_components = st.slider("Number of Principal Components", min_value=2, max_value=max_components,
                              value=min(3, max_components))
 
-    pca_type = st.radio("Choose PCA Type", options=["Standard PCA", "Kernel PCA"])
-
-    if pca_type == "Kernel PCA":
-        kernel = st.selectbox("Choose Kernel", options=["poly", "rbf", "sigmoid", "cosine"])
+    pca_options = {
+        "Standard PCA": None,
+        "Kernel PCA (poly)": "poly",
+        "Kernel PCA (rbf)": "rbf",
+        "Kernel PCA (sigmoid)": "sigmoid",
+        "Kernel PCA (cosine)": "cosine"
+    }
+    pca_choice = st.selectbox("Choose PCA Type", options=list(pca_options.keys()))
+    pca_type = "Kernel PCA" if "Kernel PCA" in pca_choice else "Standard PCA"
+    kernel = pca_options[pca_choice]
 
     run_pca = st.checkbox("📊 Show PCA Plot", value=False)
     run_explained_variance = st.checkbox("📈 Show Explained Variance Plot", value=False)
