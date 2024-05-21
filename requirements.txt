@@ -10,5 +10,5 @@ streamlit==1.33.0
 trimap==1.1.4
 umap-learn==0.5.6
 setuptools==69.5.1
-openml
-plotly
+openml==0.14.2
+plotly==5.22.0
