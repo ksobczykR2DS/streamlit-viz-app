@@ -10,9 +10,6 @@ import openml
 import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
-from PIL import Image
-import base64
-import io
 
 
 # PAGE 1 UTILS
@@ -60,6 +57,7 @@ def load_other_datasets(dataset_name, sample_percentage):
     except Exception as e:
         st.error(f"Error loading data: {e}")
         my_bar.empty()
+
 
 def plot_distribution(selected_column):
     fig, ax = plt.subplots()
@@ -198,7 +196,6 @@ def get_mnist_dataset(sample_percentage):
         raise ValueError("Sample percentage must be between 0 and 100")
 
 
-
 def convert_and_scale_dataset(dataset):
     if isinstance(dataset, pd.DataFrame):
         return dataset.values
@@ -301,12 +298,14 @@ def run_pacmap(dataset, n_neighbors=50, mn_ratio=0.5, fp_ratio=2.0):
             st.error(f"An error occurred while running PaCMAP: {str(e)}")
             return None
 
+
 def get_image_by_id(id):
     image = st.session_state['images'][id]
     fig, ax = plt.subplots()
     ax.imshow(image, cmap='gray')
     ax.axis('off')
     return fig
+
 
 def visualize_individual_result(data, result, labels, title="Result Visualization"):
     result_df = pd.DataFrame(result, columns=['Component 1', 'Component 2'])
@@ -321,5 +320,3 @@ def visualize_individual_result(data, result, labels, title="Result Visualizatio
     st.plotly_chart(fig, use_container_width=True)
 
     return fig
-
-
